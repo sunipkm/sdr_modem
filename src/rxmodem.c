@@ -144,8 +144,8 @@ static void *rx_irq_thread(void *__dev)
             dev->frame_ofst = (ssize_t *)realloc(dev->frame_ofst, sizeof(ssize_t) * (dev->frame_num + 1));
             eprintf("Dest: %p, size = %u\n", dev->frame_ofst, dev->frame_num + 1);
         }
-        #ifdef RXDEBUG
-    eprintf("%s: %d\n", __func__, __LINE__);
+#ifdef RXDEBUG
+        eprintf("%s: %d\n", __func__, __LINE__);
 #endif
         if (dev->frame_ofst == NULL)
         {
@@ -155,22 +155,22 @@ static void *rx_irq_thread(void *__dev)
             goto rx_irq_thread_exit;
         }
         (dev->frame_ofst)[dev->frame_num] = ofst;
-        #ifdef RXDEBUG
-    eprintf("%s: %d\n", __func__, __LINE__);
+#ifdef RXDEBUG
+        eprintf("%s: %d\n", __func__, __LINE__);
 #endif
         dev->frame_num++;
-        #ifdef RXDEBUG
-    eprintf("%s: %d\n", __func__, __LINE__);
-#endif
-        dev->retcode = adidma_read(dev->dma, ofst, frame_sz - 8);
 #ifdef RXDEBUG
-    eprintf("%s: %d\n", __func__, __LINE__);
-    fprint_frame_hdr(stdout, dev->dma->mem_virt_addr + ofst);
-    // char fnamebuf[256];
-    // snprintf(fnamebuf, 256, "out%d.txt", loop_id++);
-    // FILE *fp = fopen(fnamebuf, "wb");
-    // fwrite(dev->dma->mem_virt_addr + ofst, 1, frame_sz, fp);
-    // fclose(fp);
+        eprintf("%s: %d\n", __func__, __LINE__);
+#endif
+        dev->retcode = adidma_read(dev->dma, ofst, frame_sz - sizeof(uint64_t));
+#ifdef RXDEBUG
+        eprintf("%s: %d\n", __func__, __LINE__);
+        fprint_frame_hdr(stdout, dev->dma->mem_virt_addr + ofst);
+        // char fnamebuf[256];
+        // snprintf(fnamebuf, 256, "out%d.txt", loop_id++);
+        // FILE *fp = fopen(fnamebuf, "wb");
+        // fwrite(dev->dma->mem_virt_addr + ofst, 1, frame_sz, fp);
+        // fclose(fp);
 #endif
         pthread_cond_signal(&rx_rcv);
         ofst += frame_sz;
@@ -332,7 +332,11 @@ int rxmodem_reset(rxmodem *dev, rxmodem_conf_t *conf)
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
-    uio_write(dev, RXMODEM_EQ_BYPASS, 0);
+    uio_write(dev, RXMODEM_BYPASS_EQ, 0);
+#ifdef RXDEBUG
+    eprintf("%s: %d\n", __func__, __LINE__);
+#endif
+    uio_write(dev, RXMODEM_BYPASS_CODING, 0);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif

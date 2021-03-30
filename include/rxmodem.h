@@ -21,14 +21,24 @@
 
 typedef enum
 {
-    RXMODEM_RESET = 0x0,          /// Reset the entire IP
-    RXMODEM_RX_ENABLE = 0x118,    /// Enable RX. Default: 0, Receive: 1
-    RXMODEM_FR_LOOP_BW = 0x100,   /// Default: 40
-    RXMODEM_EQ_MU = 0x104,        /// Default: 200
-    RXMODEM_SCOPE_SEL = 0x108,    /// Default: 2
-    RXMODEM_EQ_BYPASS = 0x114,    /// Default: 0
-    RXMODEM_PD_THRESHOLD = 0x11c, /// Default: 10
-    RXMODEM_PAYLOAD_LEN = 0x134,  /// Payload length in bytes
+    RXMODEM_RESET = 0x0,           /// Reset the entire IP
+    RXMODEM_FR_LOOP_BW = 0x100,    /// Enable RX. Default: 0, Receive: 1
+    RXMODEM_EQ_MU = 0x104,         /// Default: 200
+    RXMODEM_PD_THRESHOLD = 0x108,  /// Default: 10
+    RXMODEM_RX_ENABLE = 0x10c,     /// Enable Decode: 1 to start radio, 0 to stop radio
+    RXMODEM_BYPASS_CODING = 0x110, /// Enable coding bypass: 0
+    RXMODEM_BYPASS_EQ = 0x114,     /// Enable bypass eq: 0
+    RXMODEM_PAYLOAD_LEN = 0x134    /// Read register for payload length
+    
+    // RXMODEM_RESET = 0x0,          /// Reset the entire IP
+    // RXMODEM_RX_ENABLE = 0x118,    /// Enable RX. Default: 0, Receive: 1
+    // RXMODEM_FR_LOOP_BW = 0x100,   /// Default: 40
+    // RXMODEM_EQ_MU = 0x104,        /// Default: 200
+    // RXMODEM_SCOPE_SEL = 0x108,    /// Default: 2
+    // RXMODEM_EQ_BYPASS = 0x114,    /// Default: 0
+    // RXMODEM_PD_THRESHOLD = 0x11c, /// Default: 10
+    // RXMODEM_PAYLOAD_LEN = 0x134,  /// Payload length in bytes
+
     // RXMODEM_RESET = 0x0,          /// Reset the entire IP
     // RXMODEM_RX_ENABLE = 0x118,    /// Enable RX. Default: 0, Receive: 1
     // RXMODEM_FR_LOOP_BW = 0x100,   /// Default: 40
@@ -66,9 +76,9 @@ typedef struct
 typedef struct
 {
     uio_dev *bus;               /// Pointer to uio device struct for the modem
-    adidma dma[1];                /// Pointer to ADI DMA struct
-    rxmodem_conf_t conf[1];       /// RX modem configuration
-    ssize_t *frame_ofst;         /// RX frame offset
+    adidma dma[1];              /// Pointer to ADI DMA struct
+    rxmodem_conf_t conf[1];     /// RX modem configuration
+    ssize_t *frame_ofst;        /// RX frame offset
     pthread_t thr;              /// Pointer to RX thread
     pthread_cond_t rx_write;    /// Condition variable to arm rx thread, called by rxmodem_receiver
     pthread_mutex_t rx_write_m; /// mutex to protect cond variable
@@ -79,7 +89,7 @@ typedef struct
     int retcode;                /// Return code from the irq thread, check on each wakeup
     int read_done;              /// indicate read has been done
     int rx_done;                /// Indicates thr to finish
-    int frame_num;         /// Length of frames on buffer (read up to this offset)
+    int frame_num;              /// Length of frames on buffer (read up to this offset)
     size_t max_pack_sz;
 } rxmodem;
 

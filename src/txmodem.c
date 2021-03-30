@@ -105,10 +105,10 @@ int txmodem_write(txmodem *dev, const void *buf, ssize_t size)
         frame_hdr->num_frames = num_frames;
         frame_hdr->mtu = dev->mtu;
         frame_hdr->frame_sz = dev->mtu < (size - data_ofst) ? dev->mtu : size - data_ofst; // data of frame
-        frame_hdr->frame_crc = crc16(buf + data_ofst, frame_hdr->frame_sz); // crc of frame
-        frame_hdr->frame_crc2 = frame_hdr->frame_crc; // copy of crc
+        frame_hdr->frame_crc = crc16(buf + data_ofst, frame_hdr->frame_sz);                // crc of frame
+        frame_hdr->frame_crc2 = frame_hdr->frame_crc;                                      // copy of crc
         /* Calculate frame padding */
-        size_t frame_padding = frame_hdr->frame_sz % sizeof(uint64_t); // calculate how many bytes we are off by
+        size_t frame_padding = frame_hdr->frame_sz % sizeof(uint64_t);        // calculate how many bytes we are off by
         frame_padding = frame_padding ? sizeof(uint64_t) - frame_padding : 0; // calculate proper padding
         /* TX IP Core Frame Size */
         uint64_t dma_frame_sz = frame_hdr->frame_sz + frame_padding + sizeof(modem_frame_header_t) + sizeof(uint64_t);
