@@ -140,8 +140,16 @@ int txmodem_write(txmodem *dev, const void *buf, ssize_t size)
 #ifdef TXDEBUG
         eprintf("%s: Loop %d | Frame sz: %u, Frame ofst: %d, data ofst: %d, wrote frame data\n", __func__, i, frame_hdr->frame_sz, frame_ofst, data_ofst);
 #endif
+#ifdef TX_EVERY_FRAME
+        frame_ofst = 0;
+        adidma_write(dev->dma, 0x0, dma_frame_sz + sizeof(uint64_t));
+#endif
     }
+#ifndef TX_EVERY_FRAME
     return adidma_write(dev->dma, 0x0, frame_ofst, 0);
+#else
+    return 0;
+#endif
 }
 
 void txmodem_destroy(txmodem *dev)
