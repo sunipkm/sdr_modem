@@ -162,7 +162,7 @@ static void *rx_irq_thread(void *__dev)
         #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
-        dev->retcode = adidma_read(dev->dma, ofst, frame_sz);
+        dev->retcode = adidma_read(dev->dma, ofst, frame_sz - 8);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
     fprint_frame_hdr(stdout, dev->dma->mem_virt_addr + ofst);

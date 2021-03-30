@@ -28,7 +28,7 @@ fi
 
 /usr/bin/iio_attr -c -i ad9361-phy voltage0 rssi
 
-/usr/bin/iio_attr -c -o ad9361-phy altvoltage1 frequency 2400000000 # TX LO frequency
+/usr/bin/iio_attr -c -o ad9361-phy altvoltage1 frequency 2500000000 # TX LO frequency
 /usr/bin/iio_attr -c -o ad9361-phy altvoltage0 frequency 2400000000 # RX LO frequency
 
 
@@ -96,7 +96,7 @@ echo -n "cf-ad9361-dds-core-lpc reg 0x048 : "
 for i in $(seq 0 3)
 do
 	/usr/bin/iio_reg cf-ad9361-dds-core-lpc $((0x418 + $i * 0x40)) 0x2
-	echo -n "cf-ad9361-dds-core-lpc reg" $(printf "0x%x" $((0x418 + 1 * 0x40))) " : "
+	echo -n "cf-ad9361-dds-core-lpc reg" $(printf "0x%x" $((0x418 + $i * 0x40))) " : "
 	/usr/bin/iio_reg cf-ad9361-dds-core-lpc $((0x418 + $i * 0x40))
 done
 
