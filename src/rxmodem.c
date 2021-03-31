@@ -16,6 +16,9 @@
 #include "gpiodev/gpiodev.h"
 #include <string.h>
 #include <stdlib.h>
+#define _POSIX_C_SOURCE 199309L
+#include <time.h>
+#include <errno.h>
 
 #define eprintf(...)              \
     fprintf(stderr, __VA_ARGS__); \
@@ -27,6 +30,7 @@
 static void *rx_irq_thread(void *__dev);
 static pthread_cond_t rx_rcv;
 static pthread_mutex_t rx_rcv_m;
+static pthread_mutex_t rx_write;
 
 #define RX_FIFO_RST 17 // GPIO 17 resets the FIFO contents
 
@@ -71,6 +75,17 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
+    /* Unmask and clear any interrupts */
+    if (uio_unmask_irq(dev->bus) < 0)
+    {
+        eprintf("%s: Unable to unmask RX interrupt, ");
+        perror("uio_unmask_irq");
+    }
+    else
+    {
+        // loop and clear all interrupts
+        while(uio_wait_irq(dev->bus, 10) > 0); // with 10 ms timeout
+    }
     /* mask the RX interrupt */
     if (uio_mask_irq(dev->bus) < 0)
     {
@@ -89,7 +104,7 @@ static void *rx_irq_thread(void *__dev)
     memset(dev->dma->mem_virt_addr, 0x0, dev->dma->mem_sz);
     // Clear FIFO contents in the beginning by toggling the RST pin
     gpioWrite(RX_FIFO_RST, GPIO_HIGH);
-    usleep(10000);
+    usleep(100000); // 100 ms to clear FIFO
     gpioWrite(RX_FIFO_RST, GPIO_LOW);
     // set up for the first interrupt
     if ((dev->retcode = rxmodem_start(dev)) < 0)
@@ -100,7 +115,7 @@ static void *rx_irq_thread(void *__dev)
     ssize_t ofst = 0;
     uint32_t frame_sz = 0;
     int num_irq_timeout = 0;
-    dev->frame_num = 0;
+    int frame_num = 0;
 #ifdef RXDEBUG
     static int loop_id = 0;
 #endif
@@ -136,13 +151,13 @@ static void *rx_irq_thread(void *__dev)
             dev->retcode = RX_FRAME_INVALID;
             goto rx_irq_thread_exit;
         }
-        if (dev->frame_num == 0)
+        if (frame_num == 0)
             dev->frame_ofst = (ssize_t *)malloc(sizeof(ssize_t));
         else
         {
-            eprintf("%s: Realloc: Source %p, size = %u | ", __func__, dev->frame_ofst, dev->frame_num);
-            dev->frame_ofst = (ssize_t *)realloc(dev->frame_ofst, sizeof(ssize_t) * (dev->frame_num + 1));
-            eprintf("Dest: %p, size = %u\n", dev->frame_ofst, dev->frame_num + 1);
+            eprintf("%s: Realloc: Source %p, size = %u | ", __func__, dev->frame_ofst, frame_num);
+            dev->frame_ofst = (ssize_t *)realloc(dev->frame_ofst, sizeof(ssize_t) * (frame_num + 1));
+            eprintf("Dest: %p, size = %u\n", dev->frame_ofst, frame_num + 1);
         }
 #ifdef RXDEBUG
         eprintf("%s: %d\n", __func__, __LINE__);
@@ -154,15 +169,15 @@ static void *rx_irq_thread(void *__dev)
             pthread_cond_signal(&rx_rcv);
             goto rx_irq_thread_exit;
         }
-        (dev->frame_ofst)[dev->frame_num] = ofst;
+        (dev->frame_ofst)[frame_num] = ofst;
 #ifdef RXDEBUG
         eprintf("%s: %d\n", __func__, __LINE__);
 #endif
-        dev->frame_num++;
+        (frame_num)++;
 #ifdef RXDEBUG
-        eprintf("%s: %d\n", __func__, __LINE__);
+        eprintf("%s: Frame number: %d, loop ID: %d\n", __func__, frame_num, loop_id++);
 #endif
-        dev->retcode = adidma_read(dev->dma, ofst, frame_sz);
+        dev->retcode = adidma_read(dev->dma, ofst, frame_sz + frame_num - 1 + sizeof(uint32_t));
 #ifdef RXDEBUG
         eprintf("%s: %d\n", __func__, __LINE__);
         fprint_frame_hdr(stdout, dev->dma->mem_virt_addr + ofst);
@@ -172,14 +187,18 @@ static void *rx_irq_thread(void *__dev)
         // fwrite(dev->dma->mem_virt_addr + ofst, 1, frame_sz, fp);
         // fclose(fp);
 #endif
+        pthread_mutex_lock(&(rx_write));
+        dev->frame_num = frame_num;
+        pthread_mutex_unlock(&(rx_write));
         pthread_cond_signal(&rx_rcv);
-        ofst += frame_sz - 2 * sizeof(uint64_t);
+        ofst += frame_sz - (FRAME_PADDING) * sizeof(uint64_t);
     }
 rx_irq_thread_exit:
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
     rxmodem_stop(dev);
+    dev->retcode = retcode;
     return (void *)&retcode;
 }
 
@@ -205,10 +224,20 @@ int rxmodem_stop(rxmodem *dev)
     return 1;
 }
 
+static inline void getwaittime(struct timespec *ts)
+{
+    clock_gettime(0, ts);
+    printf("%s: Wait_sec: %u, wait_nsec: %u\n", __func__, ts->tv_sec, ts->tv_nsec);
+    ts->tv_sec += RXMODEM_TIMEOUT / 1000;
+    ts->tv_nsec += (RXMODEM_TIMEOUT % 1000) * 1000000;
+}
+
 ssize_t rxmodem_receive(rxmodem *dev)
 {
     // Initialize timed wait
-    static struct timespec waitts = {.tv_sec = RXMODEM_TIMEOUT / 1000, .tv_nsec = (RXMODEM_TIMEOUT % 1000) * 1000000};
+    static struct timespec waitts; // = {.tv_sec = RXMODEM_TIMEOUT / 1000, .tv_nsec = (RXMODEM_TIMEOUT % 1000) * 1000000};
+    getwaittime(&waitts);
+    // printf("Wait_sec: %u, wait_nsec: %u\n", waitts.tv_sec, waitts.tv_nsec);
     // initialize the RX thread
     pthread_attr_t rx_thr_attr[1];
     pthread_attr_init(rx_thr_attr);
@@ -225,7 +254,10 @@ ssize_t rxmodem_receive(rxmodem *dev)
 #ifdef RXDEBUG
     eprintf("%s: Waiting...\n", __func__);
 #endif
-    pthread_cond_timedwait(&rx_rcv, &rx_rcv_m, &waitts);
+    int ret = pthread_cond_timedwait(&rx_rcv, &rx_rcv_m, &waitts);
+    if (ret > 0)
+        return -ret;
+    // pthread_cond_wait(&rx_rcv, &rx_rcv_m);
 #ifdef RXDEBUG
     eprintf("%s: Wait over!\n", __func__);
 #endif
@@ -278,16 +310,48 @@ ssize_t rxmodem_receive(rxmodem *dev)
     }
     // everything for the first header is a success!
     int num_frames = frame_hdr->num_frames;
-    while (num_frames > dev->frame_num + 1)
+    printf("%s: Number of frames to be received: %d\n", __func__, num_frames);
+    // getwaittime(&waitts);
+    // pthread_cond_timedwait(&rx_rcv, &rx_rcv_m, &waitts); // wait for return
+    // if (dev->retcode < 0)
+    //     retcode = dev->retcode;
+    int frame_num = 0;
+    while (1)
     {
-        // wait for wakeup
-        pthread_cond_timedwait(&rx_rcv, &rx_rcv_m, &waitts);
+        printf("%s: In loop!\n", __func__);
+        fflush(stdout);
+        printf("%s: %d\n", __func__, __LINE__);
+        fflush(stdout);
+
+        pthread_mutex_lock(&(rx_write));
+        memcpy(&frame_num, &(dev->frame_num), sizeof(int));
+        pthread_mutex_unlock(&(rx_write));
+
+        printf("%s: Frame number = %d, Number of frames = %d\n", __func__, frame_num, num_frames);
+        fflush(stdout);
+        if (frame_num >= num_frames)
+        {
 #ifdef RXDEBUG
-        eprintf("%s: Current frame number: %d\n", dev->frame_num);
+            printf("%s: %d >= %d triggered\n", __func__, frame_num, num_frames);
+            fflush(stdout);
+#endif
+            break;
+        }
+        // wait for wakeup
+        getwaittime(&waitts);
+        printf("%s: %d\n", __func__, __LINE__);
+        fflush(stdout);
+        pthread_cond_timedwait(&rx_rcv, &rx_rcv_m, &waitts);
+        printf("%s: %d\n", __func__, __LINE__);
+        fflush(stdout);
+#ifdef RXDEBUG
+        eprintf("%s: Current frame number: %d\n", __func__, frame_num);
+        fflush(stderr);
 #endif
         // check retcode
         if (dev->retcode <= 0) // timed out
         {
+            eprintf("%s: Device return code %d!\n", __func__, dev->retcode);
             dev->rx_done = 1;
             break;
         }
@@ -305,16 +369,28 @@ ssize_t rxmodem_read(rxmodem *dev, void *buf, ssize_t size)
     for (int i = 0; i < dev->frame_num; i++)
     {
         modem_frame_header_t frame_hdr[1]; // frame header
-        ssize_t ofst = dev->frame_ofst[i];
+        ssize_t ofst = (dev->frame_ofst)[i];
+#ifdef RXDEBUG
+        printf("%s: Offset %d = %ld\n", __func__, i, ofst);
+#endif
         // read in frame header
-        memcpy(frame_hdr, dev->dma->mem_virt_addr, sizeof(modem_frame_header_t));
+        memcpy(frame_hdr, dev->dma->mem_virt_addr + ofst, sizeof(modem_frame_header_t));
         // copy out data
         memcpy(buf + total_read, dev->dma->mem_virt_addr + ofst + sizeof(modem_frame_header_t), frame_hdr->frame_sz);
         // check CRC
         if (frame_hdr->frame_crc == frame_hdr->frame_crc2)
         {
-            if (frame_hdr->frame_crc == crc16(buf + total_read, frame_hdr->frame_sz))
+            uint16_t crcval = crc16(buf + total_read, frame_hdr->frame_sz);
+            if (frame_hdr->frame_crc == crcval)
                 valid_read += frame_hdr->frame_sz;
+            else
+            {
+                eprintf("%s: Valid CRC = 0x%x, Calculated CRC = 0x%x\n", __func__, frame_hdr->frame_crc, crcval);
+            }
+        }
+        else
+        {
+            eprintf("%s: CRC invalid in frame header\n", __func__);
         }
         total_read += frame_hdr->frame_sz;
     }
@@ -329,26 +405,32 @@ int rxmodem_reset(rxmodem *dev, rxmodem_conf_t *conf)
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
+    usleep(10000);
     uio_write(dev, RXMODEM_RX_ENABLE, 0x0);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
+    usleep(10000);
     uio_write(dev, RXMODEM_FR_LOOP_BW, 40);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
+    usleep(10000);
     uio_write(dev, RXMODEM_EQ_MU, 200);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
+    usleep(10000);
     uio_write(dev, RXMODEM_BYPASS_EQ, 0);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
+    usleep(10000);
     uio_write(dev, RXMODEM_BYPASS_CODING, 0);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
+    usleep(10000);
     uio_write(dev, RXMODEM_PD_THRESHOLD, 10);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
@@ -376,6 +458,8 @@ int main(int argc, char *argv[])
         eprintf("%s: Receive size = %ld\n", __func__, rcv_sz);
         return -1;
     }
+    printf("%s: Received data size: %d\n", __func__, rcv_sz);
+    fflush(stdout);
     char *buf = (char *)malloc(rcv_sz);
     ssize_t rd_sz = rxmodem_read(dev, buf, rcv_sz);
     if (rcv_sz != rd_sz)
@@ -383,11 +467,12 @@ int main(int argc, char *argv[])
         eprintf("%s: Read size = %ld out of %ld\n", __func__, rd_sz, rcv_sz);
     }
     sleep(1);
-    printf("Message:\n\n");
-    FILE *fp = fopen("out.txt", "wb");
-    for (int i = 0; i < rcv_sz; i++)
+    printf("Message:");
+    for (int i = 0; i < rd_sz; i++)
+        printf("%c", buf[i]);
+    FILE *fp = fopen("out_rx.txt", "wb");
+    for (int i = 0; i < rd_sz; i++)
     {
-        printf("%c", ((char *)dev->dma->mem_virt_addr)[i]);
         fprintf(fp, "%c", ((char *)dev->dma->mem_virt_addr)[i]);
     }
     fclose(fp);

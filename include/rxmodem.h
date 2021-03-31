@@ -16,6 +16,7 @@
 #include <adidma.h>
 #include <pthread.h>
 #include <stdint.h>
+#include "txrx_packdef.h"
 
 #define NUM_IRQ_RETRIES 1
 

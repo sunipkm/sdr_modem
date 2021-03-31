@@ -146,7 +146,7 @@ int txmodem_write(txmodem *dev, const void *buf, ssize_t size)
         /* Data offset */
         data_ofst += frame_hdr->frame_sz;
 #ifdef TXDEBUG
-        eprintf("%s: Loop %d | Frame sz: %u, Frame ofst: %d, data ofst: %d, wrote frame data\n", __func__, i, frame_hdr->frame_sz, frame_ofst, data_ofst);
+        eprintf("%s: Loop %d | Frame sz: %u, Frame ofst: %d, data ofst: %d, CRC: 0x%04x, wrote frame data\n", __func__, i, frame_hdr->frame_sz, frame_ofst, data_ofst, frame_hdr->frame_crc);
 #endif
 #ifdef TX_EVERY_FRAME
         frame_ofst = 0;
@@ -154,9 +154,11 @@ int txmodem_write(txmodem *dev, const void *buf, ssize_t size)
 #endif
     }
 #ifndef TX_EVERY_FRAME
-    FILE *fp = fopen("out.txt", "wb");
+#ifdef TXDEBUG
+    FILE *fp = fopen("out_tx.txt", "wb");
     fwrite(dev->dma->mem_virt_addr, 0x1, frame_ofst, fp);
     fclose(fp);
+#endif
     return adidma_write(dev->dma, 0x0, frame_ofst, 0);
 #else
     return 0;

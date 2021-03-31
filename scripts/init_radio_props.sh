@@ -28,8 +28,8 @@ fi
 
 /usr/bin/iio_attr -c -i ad9361-phy voltage0 rssi
 
-/usr/bin/iio_attr -c -o ad9361-phy altvoltage1 frequency 2500000000 # TX LO frequency
-/usr/bin/iio_attr -c -o ad9361-phy altvoltage0 frequency 2400000000 # RX LO frequency
+/usr/bin/iio_attr -c -o ad9361-phy altvoltage1 frequency 2400000000 # TX LO frequency
+/usr/bin/iio_attr -c -o ad9361-phy altvoltage0 frequency 2500000000 # RX LO frequency
 
 
 # en_dds.sh
