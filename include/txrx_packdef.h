@@ -23,9 +23,15 @@
 #define MODEM_BYTE_ALIGN 8
 
 /**
+ * @brief FRAME_PADDING sets the number of padding QWORDS after each frame
+ * 
+ */
+#define FRAME_PADDING 2 // default: 2
+
+/**
  * @brief DEFAULT_FRAME_SZ sets the default MTU of the radio. Should be a multiple of MODEM_BYTE_ALIGN.
  */
-#define DEFAULT_FRAME_SZ 4072
+#define DEFAULT_FRAME_SZ 1392 // 4072
 
 /**
  * @brief PACKET_GUID is the unique ID for space hauc, it is the bottom 32 bits of M_PI

@@ -71,7 +71,7 @@ int txmodem_write(txmodem *dev, const void *buf, ssize_t size)
     if (dev->mtu == 0) // MTU not set, revert to default
     {
         // dev->mtu = 4072 - sizeof(modem_frame_header_t);
-        dev->mtu = DEFAULT_FRAME_SZ - sizeof(modem_frame_header_t) - sizeof(uint64_t); // padding
+        dev->mtu = DEFAULT_FRAME_SZ - sizeof(modem_frame_header_t) - FRAME_PADDING * sizeof(uint64_t); // padding
     }
     // MODEM_BYTE_ALIGN-byte align MTU
     if (dev->mtu % MODEM_BYTE_ALIGN)
@@ -80,7 +80,7 @@ int txmodem_write(txmodem *dev, const void *buf, ssize_t size)
     eprintf("%s: MTU: %u\n", __func__, dev->mtu);
 #endif
     // check how many frames possible at this MTU
-    ssize_t max_frame_sz = dev->mtu + sizeof(modem_frame_header_t) + 2 * sizeof(uint64_t); // mtu + frame header + padding + frame length for TX make up one frame in mem
+    ssize_t max_frame_sz = dev->mtu + sizeof(modem_frame_header_t) + ((FRAME_PADDING + 1) * sizeof(uint64_t)); // mtu + frame header + padding + frame length for TX make up one frame in mem
     int max_num_frames = (dev->max_pack_sz) / (max_frame_sz);
     int num_frames = (size / dev->mtu) + ((size % dev->mtu) > 0);
 #ifdef TXDEBUG
@@ -113,30 +113,36 @@ int txmodem_write(txmodem *dev, const void *buf, ssize_t size)
         if (frame_padding > 0)
             printf("%s: Frame padding = %u\n", __func__, frame_padding);
         /* TX IP Core Frame Size */
-        uint64_t dma_frame_sz = frame_hdr->frame_sz + frame_padding + sizeof(modem_frame_header_t) + sizeof(uint64_t);
+        uint64_t dma_frame_sz = frame_hdr->frame_sz + frame_padding + sizeof(modem_frame_header_t) + FRAME_PADDING * sizeof(uint64_t);
         // dma_frame_sz += dma_frame_sz % MODEM_BYTE_ALIGN ? MODEM_BYTE_ALIGN - (dma_frame_sz % MODEM_BYTE_ALIGN) : 0; // 4-bytes aligned, will pad DMA buffer with extra zeros at the end if necessary
+        
         /* Copy frame size (used by the TX IP Core) */
         memcpy(dev->dma->mem_virt_addr + frame_ofst, &(dma_frame_sz), sizeof(uint64_t));
         frame_ofst += sizeof(uint64_t);
 #ifdef TXDEBUG
         eprintf("%s: Loop %d | Frame sz: %u, Frame ofst: %d, data ofst: %d, wrote frame sz\n", __func__, i, frame_hdr->frame_sz, frame_ofst, data_ofst);
 #endif
+        
         /* Copy frame header */
         memcpy(dev->dma->mem_virt_addr + frame_ofst, &(frame_hdr), sizeof(modem_frame_header_t)); // copy frame header
         frame_ofst += sizeof(modem_frame_header_t);
 #ifdef TXDEBUG
         eprintf("%s: Loop %d | Frame sz: %u, Frame ofst: %d, data ofst: %d, wrote frame hdr\n", __func__, i, frame_hdr->frame_sz, frame_ofst, data_ofst);
 #endif
+        
         /* Copy frame data */
         memcpy(dev->dma->mem_virt_addr + frame_ofst, buf + data_ofst, frame_hdr->frame_sz); // copy data
         /* Fix frame offset for DMA */
         frame_ofst += frame_hdr->frame_sz;
+        
         /* Padding Frame */
         memset(dev->dma->mem_virt_addr + frame_ofst, 0x0, frame_padding);
         frame_ofst += frame_padding;
-        /* Padding 8 bytes */
-        memset(dev->dma->mem_virt_addr + frame_ofst, 0x0, sizeof(uint64_t));
-        frame_ofst += sizeof(uint64_t);
+        
+        /* Padding FRAME_PADDING * 8 bytes */
+        memset(dev->dma->mem_virt_addr + frame_ofst, 0x0, FRAME_PADDING * sizeof(uint64_t));
+        frame_ofst += FRAME_PADDING * sizeof(uint64_t);
+        
         /* Data offset */
         data_ofst += frame_hdr->frame_sz;
 #ifdef TXDEBUG
