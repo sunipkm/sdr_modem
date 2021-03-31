@@ -162,7 +162,7 @@ static void *rx_irq_thread(void *__dev)
 #ifdef RXDEBUG
         eprintf("%s: %d\n", __func__, __LINE__);
 #endif
-        dev->retcode = adidma_read(dev->dma, ofst, frame_sz - sizeof(uint64_t));
+        dev->retcode = adidma_read(dev->dma, ofst, frame_sz);
 #ifdef RXDEBUG
         eprintf("%s: %d\n", __func__, __LINE__);
         fprint_frame_hdr(stdout, dev->dma->mem_virt_addr + ofst);
@@ -173,7 +173,7 @@ static void *rx_irq_thread(void *__dev)
         // fclose(fp);
 #endif
         pthread_cond_signal(&rx_rcv);
-        ofst += frame_sz;
+        ofst += frame_sz - 2 * sizeof(uint64_t);
     }
 rx_irq_thread_exit:
 #ifdef RXDEBUG
@@ -373,7 +373,16 @@ int main(int argc, char *argv[])
     {
         eprintf("%s: Read size = %ld out of %ld\n", __func__, rd_sz, rcv_sz);
     }
-    printf("Message:\n\n%s", buf);
+    sleep(1);
+    printf("Message:\n\n");
+    FILE *fp = fopen("out.txt", "wb");
+    for (int i = 0; i < rcv_sz; i++)
+    {
+        printf("%c", ((char *)dev->dma->mem_virt_addr)[i]);
+        fprintf(fp, "%c", ((char *)dev->dma->mem_virt_addr)[i]);
+    }
+    fclose(fp);
+    printf("\n");
     free(buf);
     return 0;
 }
