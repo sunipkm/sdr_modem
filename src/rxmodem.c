@@ -401,37 +401,37 @@ ssize_t rxmodem_read(rxmodem *dev, void *buf, ssize_t size)
 
 int rxmodem_reset(rxmodem *dev, rxmodem_conf_t *conf)
 {
-    uio_write(dev, RXMODEM_RESET, 0x1);
+    uio_write(dev->bus, RXMODEM_RESET, 0x1);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
-    usleep(10000);
-    uio_write(dev, RXMODEM_RX_ENABLE, 0x0);
+    // usleep(10000);
+    uio_write(dev->bus, RXMODEM_RX_ENABLE, 0x0);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
-    usleep(10000);
-    uio_write(dev, RXMODEM_FR_LOOP_BW, 40);
+    // usleep(10000);
+    uio_write(dev->bus, RXMODEM_FR_LOOP_BW, 40);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
-    usleep(10000);
-    uio_write(dev, RXMODEM_EQ_MU, 200);
+    // usleep(10000);
+    uio_write(dev->bus, RXMODEM_EQ_MU, 200);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
-    usleep(10000);
-    uio_write(dev, RXMODEM_BYPASS_EQ, 0);
+    // usleep(10000);
+    uio_write(dev->bus, RXMODEM_BYPASS_EQ, 0);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
-    usleep(10000);
-    uio_write(dev, RXMODEM_BYPASS_CODING, 0);
+    // usleep(10000);
+    uio_write(dev->bus, RXMODEM_BYPASS_CODING, 0);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
-    usleep(10000);
-    uio_write(dev, RXMODEM_PD_THRESHOLD, 10);
+    // usleep(10000);
+    uio_write(dev->bus, RXMODEM_PD_THRESHOLD, 10);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif

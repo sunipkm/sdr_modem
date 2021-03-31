@@ -23,7 +23,7 @@
 typedef enum
 {
     RXMODEM_RESET = 0x0,           /// Reset the entire IP
-    RXMODEM_FR_LOOP_BW = 0x100,    /// Enable RX. Default: 0, Receive: 1
+    RXMODEM_FR_LOOP_BW = 0x100,    /// FR Loop Bandwidth, default: 40
     RXMODEM_EQ_MU = 0x104,         /// Default: 200
     RXMODEM_PD_THRESHOLD = 0x108,  /// Default: 10
     RXMODEM_RX_ENABLE = 0x10c,     /// Enable Decode: 1 to start radio, 0 to stop radio
