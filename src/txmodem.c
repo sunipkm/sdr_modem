@@ -108,8 +108,10 @@ int txmodem_write(txmodem *dev, const void *buf, ssize_t size)
         frame_hdr->frame_crc = crc16(buf + data_ofst, frame_hdr->frame_sz);                // crc of frame
         frame_hdr->frame_crc2 = frame_hdr->frame_crc;                                      // copy of crc
         /* Calculate frame padding */
-        size_t frame_padding = frame_hdr->frame_sz % sizeof(uint64_t);        // calculate how many bytes we are off by
-        frame_padding = frame_padding ? sizeof(uint64_t) - frame_padding : 0; // calculate proper padding
+        size_t frame_padding = (frame_hdr->frame_sz) % sizeof(uint64_t);        // calculate how many bytes we are off by
+        frame_padding = (frame_padding > 0) ? sizeof(uint64_t) - frame_padding : 0; // calculate proper padding
+        if (frame_padding > 0)
+            printf("%s: Frame padding = %u\n", __func__, frame_padding);
         /* TX IP Core Frame Size */
         uint64_t dma_frame_sz = frame_hdr->frame_sz + frame_padding + sizeof(modem_frame_header_t) + sizeof(uint64_t);
         // dma_frame_sz += dma_frame_sz % MODEM_BYTE_ALIGN ? MODEM_BYTE_ALIGN - (dma_frame_sz % MODEM_BYTE_ALIGN) : 0; // 4-bytes aligned, will pad DMA buffer with extra zeros at the end if necessary
@@ -140,8 +142,19 @@ int txmodem_write(txmodem *dev, const void *buf, ssize_t size)
 #ifdef TXDEBUG
         eprintf("%s: Loop %d | Frame sz: %u, Frame ofst: %d, data ofst: %d, wrote frame data\n", __func__, i, frame_hdr->frame_sz, frame_ofst, data_ofst);
 #endif
+#ifdef TX_EVERY_FRAME
+        frame_ofst = 0;
+        adidma_write(dev->dma, 0x0, dma_frame_sz + sizeof(uint64_t), 0);
+#endif
     }
+#ifndef TX_EVERY_FRAME
+    FILE *fp = fopen("out.txt", "wb");
+    fwrite(dev->dma->mem_virt_addr, 0x1, frame_ofst, fp);
+    fclose(fp);
     return adidma_write(dev->dma, 0x0, frame_ofst, 0);
+#else
+    return 0;
+#endif
 }
 
 void txmodem_destroy(txmodem *dev)

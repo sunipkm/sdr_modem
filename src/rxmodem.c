@@ -207,6 +207,8 @@ int rxmodem_stop(rxmodem *dev)
 
 ssize_t rxmodem_receive(rxmodem *dev)
 {
+    // Initialize timed wait
+    static struct timespec waitts = {.tv_sec = RXMODEM_TIMEOUT / 1000, .tv_nsec = (RXMODEM_TIMEOUT % 1000) * 1000000};
     // initialize the RX thread
     pthread_attr_t rx_thr_attr[1];
     pthread_attr_init(rx_thr_attr);
@@ -220,9 +222,13 @@ ssize_t rxmodem_receive(rxmodem *dev)
         return RX_THREAD_SPAWN;
     }
     // first wait
+#ifdef RXDEBUG
     eprintf("%s: Waiting...\n", __func__);
-    pthread_cond_wait(&rx_rcv, &rx_rcv_m);
+#endif
+    pthread_cond_timedwait(&rx_rcv, &rx_rcv_m, &waitts);
+#ifdef RXDEBUG
     eprintf("%s: Wait over!\n", __func__);
+#endif
     // check for retcode
     int retcode = dev->retcode;
     if (retcode <= 0)
@@ -272,10 +278,13 @@ ssize_t rxmodem_receive(rxmodem *dev)
     }
     // everything for the first header is a success!
     int num_frames = frame_hdr->num_frames;
-    while (num_frames < dev->frame_num)
+    while (num_frames > dev->frame_num + 1)
     {
         // wait for wakeup
-        pthread_cond_wait(&rx_rcv, &rx_rcv_m);
+        pthread_cond_timedwait(&rx_rcv, &rx_rcv_m, &waitts);
+#ifdef RXDEBUG
+        eprintf("%s: Current frame number: %d\n", dev->frame_num);
+#endif
         // check retcode
         if (dev->retcode <= 0) // timed out
         {

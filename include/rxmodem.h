@@ -29,7 +29,7 @@ typedef enum
     RXMODEM_BYPASS_CODING = 0x110, /// Enable coding bypass: 0
     RXMODEM_BYPASS_EQ = 0x114,     /// Enable bypass eq: 0
     RXMODEM_PAYLOAD_LEN = 0x134    /// Read register for payload length
-    
+
     // RXMODEM_RESET = 0x0,          /// Reset the entire IP
     // RXMODEM_RX_ENABLE = 0x118,    /// Enable RX. Default: 0, Receive: 1
     // RXMODEM_FR_LOOP_BW = 0x100,   /// Default: 40
@@ -75,21 +75,22 @@ typedef struct
 
 typedef struct
 {
-    uio_dev *bus;               /// Pointer to uio device struct for the modem
-    adidma dma[1];              /// Pointer to ADI DMA struct
-    rxmodem_conf_t conf[1];     /// RX modem configuration
-    ssize_t *frame_ofst;        /// RX frame offset
-    pthread_t thr;              /// Pointer to RX thread
-    pthread_cond_t rx_write;    /// Condition variable to arm rx thread, called by rxmodem_receiver
-    pthread_mutex_t rx_write_m; /// mutex to protect cond variable
-    pthread_cond_t rx_read;     /// Condition variable to signal rx read function
-    pthread_mutex_t rx_read_m;  /// Mutex to lock memory during read
-    pthread_cond_t rx_rcv;      /// Condition variable to signal rx receive function
-    pthread_mutex_t rx_rcv_m;   /// Mutex to protect cond variable
-    int retcode;                /// Return code from the irq thread, check on each wakeup
-    int read_done;              /// indicate read has been done
-    int rx_done;                /// Indicates thr to finish
-    int frame_num;              /// Length of frames on buffer (read up to this offset)
+    uio_dev *bus;                      /// Pointer to uio device struct for the modem
+    adidma dma[1];                     /// Pointer to ADI DMA struct
+    rxmodem_conf_t conf[1];            /// RX modem configuration
+    ssize_t *frame_ofst;               /// RX frame offset
+    pthread_t thr;                     /// Pointer to RX thread
+    pthread_cond_t rx_write;           /// Condition variable to arm rx thread, called by rxmodem_receiver
+    pthread_mutex_t rx_write_m;        /// mutex to protect cond variable
+    pthread_cond_t rx_read;            /// Condition variable to signal rx read function
+    pthread_mutex_t rx_read_m;         /// Mutex to lock memory during read
+    pthread_cond_t rx_rcv;             /// Condition variable to signal rx receive function
+    pthread_mutex_t rx_rcv_m;          /// Mutex to protect cond variable
+    int retcode;                       /// Return code from the irq thread, check on each wakeup
+    int read_done;                     /// indicate read has been done
+    int rx_done;                       /// Indicates thr to finish
+    int frame_num;                     /// Length of frames on buffer (read up to this offset)
+    modem_frame_header_t frame_hdr[1]; /// Frame header stored for checking
     size_t max_pack_sz;
 } rxmodem;
 
