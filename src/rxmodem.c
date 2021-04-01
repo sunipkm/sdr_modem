@@ -466,7 +466,6 @@ int main(int argc, char *argv[])
     {
         eprintf("%s: Read size = %ld out of %ld\n", __func__, rd_sz, rcv_sz);
     }
-    sleep(1);
     printf("Message:");
     for (int i = 0; i < rd_sz; i++)
         printf("%c", buf[i]);
