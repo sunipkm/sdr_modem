@@ -447,7 +447,6 @@ int rxmodem_reset(rxmodem *dev, rxmodem_conf_t *conf)
 int main(int argc, char *argv[])
 {
     printf("Starting program...\n");
-    printf("Creating message\n");
     rxmodem dev[1];
     if (rxmodem_init(dev, 0, 2) < 0)
         return -1;
