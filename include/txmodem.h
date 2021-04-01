@@ -11,6 +11,11 @@
 
 #ifndef TX_MODEM_H
 #define TX_MODEM_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <libuio.h>
 #include <adidma.h>
 #include <pthread.h>
@@ -64,4 +69,7 @@ int txmodem_write(txmodem *dev, uint8_t *buf, ssize_t size);
  * @param dev Pointer to txmodem struct
  */
 void txmodem_destroy(txmodem *dev);
+#ifdef __cplusplus
+}
+#endif
 #endif // TX_MODEM_H

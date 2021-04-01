@@ -12,6 +12,10 @@
 #ifndef RX_MODEM_H
 #define RX_MODEM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <libuio.h>
 #include <adidma.h>
 #include <pthread.h>
@@ -144,4 +148,7 @@ ssize_t rxmodem_read(rxmodem *dev, uint8_t *buf, ssize_t size);
  */
 void rxmodem_destroy(rxmodem *dev);
 
+#ifdef __cplusplus
+}
+#endif
 #endif
