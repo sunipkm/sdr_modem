@@ -66,7 +66,6 @@ typedef enum
 
 typedef struct
 {
-    int rx_enable;
     int fr_loop_bw;
     int eqmu;
     int scopesel;
@@ -76,17 +75,11 @@ typedef struct
 
 typedef struct
 {
-    uio_dev *bus;                      /// Pointer to uio device struct for the modem
+    uio_dev bus[1];                    /// Pointer to uio device struct for the modem
     adidma dma[1];                     /// Pointer to ADI DMA struct
     rxmodem_conf_t conf[1];            /// RX modem configuration
     ssize_t *frame_ofst;               /// RX frame offset
-    pthread_t thr;                     /// Pointer to RX thread
-    pthread_cond_t rx_write;           /// Condition variable to arm rx thread, called by rxmodem_receiver
-    pthread_mutex_t rx_write_m;        /// mutex to protect cond variable
-    pthread_cond_t rx_read;            /// Condition variable to signal rx read function
-    pthread_mutex_t rx_read_m;         /// Mutex to lock memory during read
-    pthread_cond_t rx_rcv;             /// Condition variable to signal rx receive function
-    pthread_mutex_t rx_rcv_m;          /// Mutex to protect cond variable
+    pthread_t thr[1];                  /// Pointer to RX thread
     int retcode;                       /// Return code from the irq thread, check on each wakeup
     int read_done;                     /// indicate read has been done
     int rx_done;                       /// Indicates thr to finish
@@ -95,18 +88,60 @@ typedef struct
     size_t max_pack_sz;
 } rxmodem;
 
+/**
+ * @brief Initialize an rxmodem device
+ * 
+ * @param dev Pointer to rxmodem struct
+ * @param rxmodem_id UIO device ID of the modem IP
+ * @param rxdma_id UIO device ID of the DMA engine
+ * @return int Positive on success, negative on error
+ */
 int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id);
-
+/**
+ * @brief Restore default configuration of the modem
+ * 
+ * @param dev rxmodem struct to describe the device
+ * @param conf Configuration to write, unused
+ * @return int Returns 1, UIO errors will cause memory access errors
+ */
 int rxmodem_reset(rxmodem *dev, rxmodem_conf_t *conf);
-
+/**
+ * @brief Arm the modem to receive by enabling decoding, and unmasking the IRQ
+ * 
+ * @param dev rxmodem struct to describe the device
+ * @return int 
+ */
 int rxmodem_start(rxmodem *dev);
-
+/**
+ * @brief Disarm the modem by disabling decoding and masking the IRQ
+ * 
+ * @param dev rxmodem struct to describe the device
+ * @return int 
+ */
 int rxmodem_stop(rxmodem *dev);
-
+/**
+ * @brief Arm the radio and wait to receive data. Blocks until all frames have been received 
+ * (i.e. all expected interrupts are addressed) for a valid frame header, or returns immediately.
+ * 
+ * @param dev rxmodem struct to describe the device
+ * @return ssize_t Size of the packet to be received, to be used to allocate buffer for rxmodem_read.
+ */
 ssize_t rxmodem_receive(rxmodem *dev);
-
+/**
+ * @brief Read N bytes from the internal buffer of the rxmodem after receiving
+ * TODO: Better error management on read
+ * 
+ * @param dev rxmodem struct to describe the device
+ * @param buf Pointer to N-byte buffer to store the received data
+ * @param size Size of the buffer in bytes
+ * @return ssize_t Number of bytes recovered, if ret != N, there is an error
+ */
 ssize_t rxmodem_read(rxmodem *dev, void *buf, ssize_t size);
-
+/**
+ * @brief Reset and close an rxmodem device
+ * 
+ * @param dev rxmodem struct to describe the device
+ */
 void rxmodem_destroy(rxmodem *dev);
 
 #endif

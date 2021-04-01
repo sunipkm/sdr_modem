@@ -256,7 +256,7 @@ typedef struct
     uint32_t mem_sz;                  /// Size of the DMA buffer
     uint32_t mem_addr;                /// Address of the DMA buffer
     int mem_fd;                       /// File descriptor to the DMA buffer for access (virtual address)
-    void *mem_virt_addr;              /// mmapped virtual address to the DMA buffer
+    uint8_t *mem_virt_addr;              /// mmapped virtual address to the DMA buffer
     void *mapping_addr;               /// mmap to the head of the virtual address that needs to be unmapped
     unsigned int tx_check_completion; /// Set this variable to check for DMA transfer completion by busy-wait on the DMAC_REG_XFER_DONE register instead of TX IP transfer complete interrupt
 } adidma;

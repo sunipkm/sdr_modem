@@ -43,7 +43,7 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
-    dev->bus = (uio_dev *)malloc(sizeof(uio_dev));
+    // dev->bus = (uio_dev *)malloc(sizeof(uio_dev));
     if (dev->bus == NULL)
         return -1;
 #ifdef RXDEBUG
@@ -66,7 +66,6 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
     /* Save default settings for RX IP */
-    dev->conf->rx_enable = 0;
     dev->conf->fr_loop_bw = 40;
     dev->conf->eqmu = 200;
     dev->conf->scopesel = 2;
@@ -84,7 +83,8 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
     else
     {
         // loop and clear all interrupts
-        while(uio_wait_irq(dev->bus, 10) > 0); // with 10 ms timeout
+        while (uio_wait_irq(dev->bus, 10) > 0)
+            ; // with 10 ms timeout
     }
     /* mask the RX interrupt */
     if (uio_mask_irq(dev->bus) < 0)
@@ -249,7 +249,7 @@ ssize_t rxmodem_receive(rxmodem *dev)
     pthread_attr_init(rx_thr_attr);
     pthread_attr_setdetachstate(rx_thr_attr, PTHREAD_CREATE_DETACHED);
     dev->rx_done = 0;
-    int rc = pthread_create(&(dev->thr), rx_thr_attr, &rx_irq_thread, (void *)dev);
+    int rc = pthread_create((dev->thr), rx_thr_attr, &rx_irq_thread, (void *)dev);
     if (rc != 0)
     {
         eprintf("%s: Unable to initialize interrupt monitor thread for TX", __func__);
@@ -263,7 +263,7 @@ ssize_t rxmodem_receive(rxmodem *dev)
     int ret = pthread_cond_timedwait(&rx_rcv, &rx_rcv_m, &waitts);
     if (ret > 0)
         return -ret;
-    // pthread_cond_wait(&rx_rcv, &rx_rcv_m);
+        // pthread_cond_wait(&rx_rcv, &rx_rcv_m);
 #ifdef RXDEBUG
     eprintf("%s: Wait over!\n", __func__);
 #endif
@@ -358,7 +358,7 @@ ssize_t rxmodem_receive(rxmodem *dev)
     }
     retcode = frame_hdr->pack_sz; // on success or timeout, send the proper size
 rxmodem_receive_end:
-    // pthread_join(dev->thr, NULL);
+    // pthread_join(dev->thr[0], NULL);
     return retcode;
 }
 
@@ -438,6 +438,17 @@ int rxmodem_reset(rxmodem *dev, rxmodem_conf_t *conf)
     return 1;
 }
 
+void rxmodem_destroy(rxmodem *dev)
+{
+    rxmodem_stop(dev);                       // stop the modem for safety
+    uio_write(dev->bus, RXMODEM_RESET, 0x1); // reset the modem IP
+    gpioWrite(RX_FIFO_RST, GPIO_HIGH);       // reset the FIFO buffer
+    usleep(10000);
+    gpioWrite(RX_FIFO_RST, GPIO_LOW);
+    uio_destroy(dev->bus);    // close the UIO device handle
+    adidma_destroy(dev->dma); // close the DMA engine handle
+}
+
 #ifdef RX_UNIT_TEST
 #include <stdio.h>
 #include <stdlib.h>
@@ -476,6 +487,7 @@ int main(int argc, char *argv[])
     fclose(fp);
     printf("\n");
     free(buf);
+    rxmodem_destroy(dev);
     return 0;
 }
 #endif
