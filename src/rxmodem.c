@@ -155,9 +155,13 @@ static void *rx_irq_thread(void *__dev)
             dev->frame_ofst = (ssize_t *)malloc(sizeof(ssize_t));
         else
         {
+#ifdef RXDEBUG
             eprintf("%s: Realloc: Source %p, size = %u | ", __func__, dev->frame_ofst, frame_num);
+#endif
             dev->frame_ofst = (ssize_t *)realloc(dev->frame_ofst, sizeof(ssize_t) * (frame_num + 1));
+#ifdef RXDEBUG
             eprintf("Dest: %p, size = %u\n", dev->frame_ofst, frame_num + 1);
+#endif
         }
 #ifdef RXDEBUG
         eprintf("%s: %d\n", __func__, __LINE__);
@@ -312,7 +316,9 @@ ssize_t rxmodem_receive(rxmodem *dev)
     }
     // everything for the first header is a success!
     int num_frames = frame_hdr->num_frames;
+#ifdef RXDEBUG
     printf("%s: Number of frames to be received: %d\n", __func__, num_frames);
+#endif
     // getwaittime(&waitts);
     // pthread_cond_timedwait(&rx_rcv, &rx_rcv_m, &waitts); // wait for return
     // if (dev->retcode < 0)
@@ -320,17 +326,13 @@ ssize_t rxmodem_receive(rxmodem *dev)
     int frame_num = 0;
     while (1)
     {
-        printf("%s: In loop!\n", __func__);
-        fflush(stdout);
-        printf("%s: %d\n", __func__, __LINE__);
-        fflush(stdout);
-
         pthread_mutex_lock(&(rx_write));
         memcpy(&frame_num, &(dev->frame_num), sizeof(int));
         pthread_mutex_unlock(&(rx_write));
-
+#ifdef RXDEBUG
         printf("%s: Frame number = %d, Number of frames = %d\n", __func__, frame_num, num_frames);
         fflush(stdout);
+#endif
         if (frame_num >= num_frames)
         {
 #ifdef RXDEBUG
@@ -341,11 +343,7 @@ ssize_t rxmodem_receive(rxmodem *dev)
         }
         // wait for wakeup
         getwaittime(&waitts);
-        printf("%s: %d\n", __func__, __LINE__);
-        fflush(stdout);
         pthread_cond_timedwait(&rx_rcv, &rx_rcv_m, &waitts);
-        printf("%s: %d\n", __func__, __LINE__);
-        fflush(stdout);
 #ifdef RXDEBUG
         eprintf("%s: Current frame number: %d\n", __func__, frame_num);
         fflush(stderr);

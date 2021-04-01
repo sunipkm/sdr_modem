@@ -339,13 +339,13 @@ int adidma_read(adidma *dev, unsigned int offset, ssize_t size)
     }
 #ifdef ADIDMA_DEBUG
     fprintf(stderr, "%s Line %d: %s", __func__, __LINE__, "Resetting DMA for RX...\n");
-#endif
     printf("Executing UIO write\n");
     fflush(stdout);
+#endif
     uio_write(dev->bus, DMAC_REG_CTRL, 0x0);
+#ifdef ADIDMA_DEBUG
     printf("Executed UIO write\n");
     fflush(stdout);
-#ifdef ADIDMA_DEBUG
     fprintf(stderr, "%s Line %d: %s", __func__, __LINE__, "Enabling DMA for RX...\n");
 #endif
     uio_write(dev->bus, DMAC_REG_CTRL, DMAC_CTRL_ENABLE);
