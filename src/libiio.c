@@ -5,7 +5,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdbool.h>
+#define __USE_MISC
 #include <unistd.h>
+#undef __USE_MISC
 #include "libiio.h"
 
 #define eprintf(...)              \
