@@ -370,6 +370,7 @@ int main()
         adradio_get_rx_bw(dev, &bw);
         adradio_get_rssi(dev, &rssi);
         printf("RX LO: %lld | RX Samp: %lld | RX BW: %lld | RSSI: %lf\n", lo_freq, samp, bw, rssi);
+        sleep(1);
     }
     adradio_destroy(dev);
     return 0;
