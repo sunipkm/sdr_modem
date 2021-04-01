@@ -26,7 +26,6 @@ int txmodem_init(txmodem *dev, int txmodem_id, int txdma_id)
 #ifdef TXMODEM_DEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
-    dev->bus = (uio_dev *)malloc(sizeof(uio_dev));
     if (dev->bus == NULL)
         return -1;
 #ifdef TXMODEM_DEBUG
@@ -37,7 +36,6 @@ int txmodem_init(txmodem *dev, int txmodem_id, int txdma_id)
 #ifdef TXMODEM_DEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
-    dev->dma = (adidma *)malloc(sizeof(adidma));
     if (dev->dma == NULL)
         return -1;
 #ifdef TXMODEM_DEBUG
@@ -60,12 +58,12 @@ int txmodem_reset(txmodem *dev, int src_sel)
     return 1;
 }
 
-int txmodem_write(txmodem *dev, const void *buf, ssize_t size)
+int txmodem_write(txmodem *dev, uint8_t *buf, ssize_t size)
 {
     static uint32_t pack_id = 0;
     if (size < 0)
     {
-        eprintf("%s: Data buffer size less than 0: %ld\n", __func__, size);
+        eprintf("%s: Data buffer size less than 0: %d\n", __func__, size);
         return -1;
     }
     if (dev->mtu == 0 || dev->mtu < TXRX_MTU_MIN) // MTU not set or too small, revert to default
@@ -108,7 +106,7 @@ int txmodem_write(txmodem *dev, const void *buf, ssize_t size)
         frame_hdr->frame_crc = crc16(buf + data_ofst, frame_hdr->frame_sz);                // crc of frame
         frame_hdr->frame_crc2 = frame_hdr->frame_crc;                                      // copy of crc
         /* Calculate frame padding */
-        size_t frame_padding = (frame_hdr->frame_sz) % sizeof(uint64_t);        // calculate how many bytes we are off by
+        size_t frame_padding = (frame_hdr->frame_sz) % sizeof(uint64_t);            // calculate how many bytes we are off by
         frame_padding = (frame_padding > 0) ? sizeof(uint64_t) - frame_padding : 0; // calculate proper padding
 #ifdef TXDEBUG
         if (frame_padding > 0)
@@ -117,34 +115,34 @@ int txmodem_write(txmodem *dev, const void *buf, ssize_t size)
         /* TX IP Core Frame Size */
         uint64_t dma_frame_sz = frame_hdr->frame_sz + frame_padding + sizeof(modem_frame_header_t) + FRAME_PADDING * sizeof(uint64_t);
         // dma_frame_sz += dma_frame_sz % MODEM_BYTE_ALIGN ? MODEM_BYTE_ALIGN - (dma_frame_sz % MODEM_BYTE_ALIGN) : 0; // 4-bytes aligned, will pad DMA buffer with extra zeros at the end if necessary
-        
+
         /* Copy frame size (used by the TX IP Core) */
         memcpy(dev->dma->mem_virt_addr + frame_ofst, &(dma_frame_sz), sizeof(uint64_t));
         frame_ofst += sizeof(uint64_t);
 #ifdef TXDEBUG
         eprintf("%s: Loop %d | Frame sz: %u, Frame ofst: %d, data ofst: %d, wrote frame sz\n", __func__, i, frame_hdr->frame_sz, frame_ofst, data_ofst);
 #endif
-        
+
         /* Copy frame header */
         memcpy(dev->dma->mem_virt_addr + frame_ofst, &(frame_hdr), sizeof(modem_frame_header_t)); // copy frame header
         frame_ofst += sizeof(modem_frame_header_t);
 #ifdef TXDEBUG
         eprintf("%s: Loop %d | Frame sz: %u, Frame ofst: %d, data ofst: %d, wrote frame hdr\n", __func__, i, frame_hdr->frame_sz, frame_ofst, data_ofst);
 #endif
-        
+
         /* Copy frame data */
         memcpy(dev->dma->mem_virt_addr + frame_ofst, buf + data_ofst, frame_hdr->frame_sz); // copy data
         /* Fix frame offset for DMA */
         frame_ofst += frame_hdr->frame_sz;
-        
+
         /* Padding Frame */
         memset(dev->dma->mem_virt_addr + frame_ofst, 0x0, frame_padding);
         frame_ofst += frame_padding;
-        
+
         /* Padding FRAME_PADDING * 8 bytes */
         memset(dev->dma->mem_virt_addr + frame_ofst, 0x0, FRAME_PADDING * sizeof(uint64_t));
         frame_ofst += FRAME_PADDING * sizeof(uint64_t);
-        
+
         /* Data offset */
         data_ofst += frame_hdr->frame_sz;
 #ifdef TXDEBUG
@@ -171,8 +169,6 @@ void txmodem_destroy(txmodem *dev)
 {
     adidma_destroy(dev->dma);
     uio_destroy(dev->bus);
-    free(dev->dma);
-    free(dev->bus);
 }
 
 #ifdef TX_UNIT_TEST

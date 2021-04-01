@@ -32,7 +32,7 @@ typedef enum
 typedef struct
 {
     int fd;             /// File descriptor for the UIO device
-    void *addr;         /// Address to the memory map of the UIO device config space
+    uint8_t *addr;      /// Address to the memory map of the UIO device config space
     size_t len;         /// Length of the UIO device config space
     int mapped;         /// Indicates whether the memory map has been allocated
     struct pollfd *pfd; /// Poll file descriptor for the UIO device

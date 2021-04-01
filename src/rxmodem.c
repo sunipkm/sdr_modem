@@ -16,6 +16,7 @@
 #include "gpiodev/gpiodev.h"
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #define _POSIX_C_SOURCE 199309L
 #include <time.h>
 #include <errno.h>
@@ -77,7 +78,7 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
     /* Unmask and clear any interrupts */
     if (uio_unmask_irq(dev->bus) < 0)
     {
-        eprintf("%s: Unable to unmask RX interrupt, ");
+        eprintf("%s: Unable to unmask RX interrupt, ", __func__);
         perror("uio_unmask_irq");
     }
     else
@@ -89,7 +90,7 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
     /* mask the RX interrupt */
     if (uio_mask_irq(dev->bus) < 0)
     {
-        eprintf("%s: Unable to mask RX interrupt, ");
+        eprintf("%s: Unable to mask RX interrupt, ", __func__);
         perror("uio_mask_irq");
     }
     return 1;
@@ -97,7 +98,7 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
 
 static void *rx_irq_thread(void *__dev)
 {
-    int num_frames = 0, retcode = 1;
+    int retcode = 1;
     rxmodem *dev = (rxmodem *)__dev;
     rxmodem_reset(dev, dev->conf);
     // clear memory for rx
@@ -203,7 +204,7 @@ rx_irq_thread_exit:
 #endif
     rxmodem_stop(dev);
     dev->retcode = retcode;
-    return (void *)&retcode;
+    return NULL;
 }
 
 int rxmodem_start(rxmodem *dev)
@@ -362,7 +363,7 @@ rxmodem_receive_end:
     return retcode;
 }
 
-ssize_t rxmodem_read(rxmodem *dev, void *buf, ssize_t size)
+ssize_t rxmodem_read(rxmodem *dev, uint8_t *buf, ssize_t size)
 {
     ssize_t valid_read = 0, total_read = 0;
     // for each frame
@@ -465,7 +466,7 @@ int main(int argc, char *argv[])
     ssize_t rcv_sz = rxmodem_receive(dev);
     if (rcv_sz < 0)
     {
-        eprintf("%s: Receive size = %ld\n", __func__, rcv_sz);
+        eprintf("%s: Receive size = %d\n", __func__, rcv_sz);
         return -1;
     }
     printf("%s: Received data size: %d\n", __func__, rcv_sz);
@@ -474,7 +475,7 @@ int main(int argc, char *argv[])
     ssize_t rd_sz = rxmodem_read(dev, buf, rcv_sz);
     if (rcv_sz != rd_sz)
     {
-        eprintf("%s: Read size = %ld out of %ld\n", __func__, rd_sz, rcv_sz);
+        eprintf("%s: Read size = %d out of %d\n", __func__, rd_sz, rcv_sz);
     }
     printf("Message:");
     for (int i = 0; i < rd_sz; i++)

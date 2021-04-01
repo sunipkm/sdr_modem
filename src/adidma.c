@@ -39,7 +39,6 @@ int adidma_init(adidma *dev, int uio_id, unsigned char ext_buffer_enb)
         ext_buffer_enb = ADIDMA_MEMCPY_ALL;
     if (dev == NULL)
         printf("%s: device ID null\n", __func__);
-    dev->bus = (uio_dev *)malloc(sizeof(uio_dev));
     if (dev->bus == NULL)
     {
 #ifdef ADIDMA_DEBUG
@@ -55,7 +54,6 @@ int adidma_init(adidma *dev, int uio_id, unsigned char ext_buffer_enb)
         fprintf(stderr, "%s Line %d: ", __func__, __LINE__);
         fprintf(stderr, "Error initiating register interface, aborting...\n");
 #endif
-        free(dev->bus);
         return ret;
     }
 
@@ -66,12 +64,11 @@ int adidma_init(adidma *dev, int uio_id, unsigned char ext_buffer_enb)
         fprintf(stderr, "%s Line %d: %s", __func__, __LINE__, "Buffer size fname could not be generated, aborting...\n");
 #endif
         uio_destroy(dev->bus);
-        free(dev->bus);
         return ADIDMA_FNAME_ERROR;
     }
 
     FILE *fp;
-    ssize_t size;
+    size_t size;
 
     fp = fopen(fname, "r");
     if (!fp)
@@ -80,11 +77,10 @@ int adidma_init(adidma *dev, int uio_id, unsigned char ext_buffer_enb)
         fprintf(stderr, "%s Line %d: %s", __func__, __LINE__, "Buffer size file could not be opened, aborting...\n");
 #endif
         uio_destroy(dev->bus);
-        free(dev->bus);
         return ADIDMA_FD_OPEN_ERROR;
     }
 
-    ret = fscanf(fp, "0x%lx", &size);
+    ret = fscanf(fp, "0x%x", &size);
     fclose(fp);
     if (ret < 0)
     {
@@ -92,17 +88,12 @@ int adidma_init(adidma *dev, int uio_id, unsigned char ext_buffer_enb)
         fprintf(stderr, "%s Line %d: %s", __func__, __LINE__, "Buffer size read error, aborting...\n");
 #endif
         uio_destroy(dev->bus);
-        free(dev->bus);
         return ADIDMA_FILE_READ_ERROR;
     }
 
-    if (size < 0)
-    {
 #ifdef ADIDMA_DEBUG
-        fprintf(stderr, "%s Line %d: %s", __func__, __LINE__, "Buffer size negative, aborting...\n");
+    fprintf(stderr, "%s: Buffer size 0x%x\n", __func__, size);
 #endif
-        return ADIDMA_BUF_SIZE_ERROR;
-    }
 
     dev->mem_sz = size;
 
@@ -114,7 +105,6 @@ int adidma_init(adidma *dev, int uio_id, unsigned char ext_buffer_enb)
         fprintf(stderr, "%s Line %d: %s", __func__, __LINE__, "Buffer address fname could not be generated, aborting...\n");
 #endif
         uio_destroy(dev->bus);
-        free(dev->bus);
         return ADIDMA_FNAME_ERROR;
     }
 
@@ -125,7 +115,6 @@ int adidma_init(adidma *dev, int uio_id, unsigned char ext_buffer_enb)
         fprintf(stderr, "%s Line %d: %s", __func__, __LINE__, "Buffer address file could not be opened, aborting...\n");
 #endif
         uio_destroy(dev->bus);
-        free(dev->bus);
         return ADIDMA_FD_OPEN_ERROR;
     }
 
@@ -137,7 +126,6 @@ int adidma_init(adidma *dev, int uio_id, unsigned char ext_buffer_enb)
         fprintf(stderr, "%s Line %d: %s", __func__, __LINE__, "Buffer address read error, aborting...\n");
 #endif
         uio_destroy(dev->bus);
-        free(dev->bus);
         return ADIDMA_FILE_READ_ERROR;
     }
 
@@ -152,7 +140,6 @@ int adidma_init(adidma *dev, int uio_id, unsigned char ext_buffer_enb)
         fprintf(stderr, "%s Line %d: %s", __func__, __LINE__, "Can not open /dev/mem, aborting...\n");
 #endif
         uio_destroy(dev->bus);
-        free(dev->bus);
         return dev->mem_fd;
     }
 
@@ -169,12 +156,11 @@ int adidma_init(adidma *dev, int uio_id, unsigned char ext_buffer_enb)
 #endif
         close(dev->mem_fd);
         uio_destroy(dev->bus);
-        free(dev->bus);
         return ADIDMA_BUF_MMAP_ERROR;
     }
     dev->mem_virt_addr = (dev->mapping_addr + (dev->mem_addr & page_mask));
 #ifdef ADIDMA_DEBUG
-    fprintf(stderr, "%s: Physical address 0x%08x, mmap address 0x%p, virtual adderss 0x%p\n", __func__, dev->mem_addr, dev->mapping_addr, dev->mem_virt_addr);
+    fprintf(stderr, "%s: Physical address 0x%08x, mmap address %p, virtual adderss %p\n", __func__, dev->mem_addr, dev->mapping_addr, dev->mem_virt_addr);
 #endif
     return 1;
 }
@@ -194,7 +180,6 @@ void adidma_destroy(adidma *dev)
         close(dev->mem_fd);
 
     uio_destroy(dev->bus);
-    free(dev->bus);
 }
 
 int adidma_write(adidma *dev, unsigned int offset, ssize_t size, unsigned char cyclic)
@@ -249,9 +234,9 @@ int adidma_write(adidma *dev, unsigned int offset, ssize_t size, unsigned char c
 
     if (!cyclic)
     {
+#ifdef ADIDMA_DEBUG
         uint64_t start_irq, end_irq;
         uint32_t counter = 1;
-#ifdef ADIDMA_DEBUG
         start_irq = get_nsec();
 #endif
         // prepare to get interrupt from start_xfer and loop until we do
@@ -303,7 +288,7 @@ int adidma_write(adidma *dev, unsigned int offset, ssize_t size, unsigned char c
 #ifdef ADIDMA_DEBUG
             counter++;
 #endif
-        } while((reg_val & 0x3) != 0x3); // keep reading on busy-wait until you hit both SOT and EOT
+        } while ((reg_val & 0x3) != 0x3); // keep reading on busy-wait until you hit both SOT and EOT
         uio_write(dev->bus, DMAC_REG_IRQ_PENDING, 0x3);
 #endif // ADIDMA_NOIRQ
 #ifdef ADIDMA_DEBUG
@@ -322,7 +307,9 @@ int adidma_write(adidma *dev, unsigned int offset, ssize_t size, unsigned char c
         fprintf(stderr, "Time taken to confirm transfer completion: %lf usec\n", (end_irq - start_irq) * 1e-3);
 #endif
     }
+#ifndef ADIDMA_NOIRQ
 write_eot:
+#endif // ADIDMA_NOIRQ
     return size;
 }
 
@@ -382,9 +369,9 @@ int adidma_read(adidma *dev, unsigned int offset, ssize_t size)
 #endif
     uio_write(dev->bus, DMAC_REG_START_XFER, 0x1);
 
+#ifdef ADIDMA_DEBUG
     uint64_t start_irq, end_irq;
     uint32_t counter = 1;
-#ifdef ADIDMA_DEBUG
     start_irq = get_nsec();
 #endif
     // prepare to get interrupt from start_xfer and loop until we do
@@ -438,7 +425,7 @@ int adidma_read(adidma *dev, unsigned int offset, ssize_t size)
 #ifdef ADIDMA_DEBUG
         counter++;
 #endif
-    } while((reg_val & 0x3) != 0x3); // keep reading on busy-wait until you hit both SOT and EOT
+    } while ((reg_val & 0x3) != 0x3); // keep reading on busy-wait until you hit both SOT and EOT
     uio_write(dev->bus, DMAC_REG_IRQ_PENDING, 0x3);
 #endif // ADIDMA_NOIRQ
 #ifdef ADIDMA_DEBUG
@@ -451,7 +438,9 @@ int adidma_read(adidma *dev, unsigned int offset, ssize_t size)
     {
         uio_read(dev->bus, DMAC_REG_XFER_DONE, &reg_val);
     } while ((reg_val & (1 << xfer_id)) != (uint32_t)(1 << xfer_id));
+#ifndef ADIDMA_NOIRQ
 read_eot:
+#endif // ADIDMA_NOIRQ
 #ifdef ADIDMA_DEBUG
     end_irq = get_nsec();
     fprintf(stderr, "%s Line %d: ", __func__, __LINE__);

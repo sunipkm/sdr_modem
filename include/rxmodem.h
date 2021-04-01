@@ -136,7 +136,7 @@ ssize_t rxmodem_receive(rxmodem *dev);
  * @param size Size of the buffer in bytes
  * @return ssize_t Number of bytes recovered, if ret != N, there is an error
  */
-ssize_t rxmodem_read(rxmodem *dev, void *buf, ssize_t size);
+ssize_t rxmodem_read(rxmodem *dev, uint8_t *buf, ssize_t size);
 /**
  * @brief Reset and close an rxmodem device
  * 

@@ -22,13 +22,13 @@
 int uio_init(uio_dev *dev, int uio_id)
 {
 #ifdef UIO_DEBUG
-        char ffname[256];
-        snprintf(ffname, 256, "/sys/class/uio/uio%d/name", uio_id);
-        FILE *ffp = fopen(ffname, "r");
-        fscanf(ffp, "%s", &ffname);
-        fprintf(stderr, "%s Line %d: %s %s\n", __func__, __LINE__, "UIO device name: ", ffname);
+    char ffname[256];
+    snprintf(ffname, 256, "/sys/class/uio/uio%d/name", uio_id);
+    FILE *ffp = fopen(ffname, "r");
+    fscanf(ffp, "%s", &ffname);
+    fprintf(stderr, "%s Line %d: %s %s\n", __func__, __LINE__, "UIO device name: ", ffname);
 #endif
-    dev->pfd = (struct pollfd *) malloc (sizeof(struct pollfd));
+    dev->pfd = (struct pollfd *)malloc(sizeof(struct pollfd));
     if (dev->pfd == NULL)
     {
         fprintf(stderr, "%s: ", __func__);
@@ -72,7 +72,7 @@ int uio_init(uio_dev *dev, int uio_id)
         return UIO_FNAME_ERROR;
     }
     FILE *fp;
-    ssize_t size;
+    size_t size;
 
     fp = fopen(fname, "r");
     if (!fp)
@@ -81,10 +81,10 @@ int uio_init(uio_dev *dev, int uio_id)
         return UIO_FD_OPEN_ERROR;
     }
 
-    int ret = fscanf(fp, "0x%lx", &size);
+    int ret = fscanf(fp, "0x%x", &size);
 #ifdef UIO_DEBUG
-    fprintf(stderr, "%s Line %d: %s %d\n", __func__, __LINE__, "UIO regmap size read: ", size);
-#endif 
+    fprintf(stderr, "%s Line %d: %s 0x%x\n", __func__, __LINE__, "UIO regmap size read: ", size);
+#endif
     fclose(fp);
     if (ret < 0)
     {
@@ -142,7 +142,6 @@ int uio_init(uio_dev *dev, int uio_id)
     // everything successful
     dev->pfd->fd = dev->fd;
     dev->mapped = 1;
-    dev->len = 0x1000;
     return 1;
 }
 
@@ -197,7 +196,7 @@ int uio_unmask_irq(uio_dev *dev)
     if (rv != (ssize_t)sizeof(umask))
     {
         fprintf(stderr, "%s Line %d: ", __func__, __LINE__);
-        fprintf(stderr, "Could not unmask interrupt. Wrote %ld of %ld...\n", rv, sizeof(umask));
+        fprintf(stderr, "Could not unmask interrupt. Wrote %ld of %lu...\n", rv, sizeof(umask));
         return UIO_UMASK_IRQ_FAILED;
     }
     return 1;
@@ -213,7 +212,7 @@ int uio_mask_irq(uio_dev *dev)
     if (rv != (ssize_t)sizeof(umask))
     {
         fprintf(stderr, "%s Line %d: ", __func__, __LINE__);
-        fprintf(stderr, "Could not mask interrupt. Wrote %ld of %ld...\n", rv, sizeof(umask));
+        fprintf(stderr, "Could not mask interrupt. Wrote %ld of %lu...\n", rv, sizeof(umask));
         return UIO_MASK_IRQ_FAILED;
     }
     return 1;

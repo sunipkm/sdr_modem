@@ -27,8 +27,8 @@ typedef enum
 
 typedef struct
 {
-    uio_dev *bus;
-    adidma *dma;
+    uio_dev bus[1];
+    adidma dma[1];
     size_t mtu;         // MTU of a frame (data size only, TX header size and frame header size has to be accounted for in TX, and frame header size and 8 byte padding has to be accounted for in RX)
     size_t max_pack_sz; // Maximum packet size
 } txmodem;
@@ -57,7 +57,7 @@ int txmodem_reset(txmodem *dev, int src_sel);
  * @param size Size of source buffer
  * @return int positive on success, negative on failure
  */
-int txmodem_write(txmodem *dev, const void *buf, ssize_t size);
+int txmodem_write(txmodem *dev, uint8_t *buf, ssize_t size);
 /**
  * @brief Close device handles and free up memory
  * 
