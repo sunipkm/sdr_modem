@@ -100,7 +100,7 @@ int uio_init(uio_dev *dev, int uio_id)
 
     dev->len = size;
 
-    int offset = 0;
+    unsigned int offset = 0;
     // access size register
     if (snprintf(fname, 256, "/sys/class/uio/uio%d/maps/map0/offset", uio_id) < 0)
     {
@@ -126,7 +126,7 @@ int uio_init(uio_dev *dev, int uio_id)
         return UIO_FILE_READ_ERROR;
     }
 
-    if (offset < 0 || offset > 0xffff) // AXI4 Lite max address size = 64KiB
+    if (offset > 0xffff) // AXI4 Lite max address size = 64KiB
     {
         fprintf(stderr, "%s Line %d: %s", __func__, __LINE__, "UIO regmap size negative, aborting...\n");
         return UIO_MMAP_OFFSET_ERROR;
@@ -196,7 +196,7 @@ int uio_unmask_irq(uio_dev *dev)
     if (rv != (ssize_t)sizeof(umask))
     {
         fprintf(stderr, "%s Line %d: ", __func__, __LINE__);
-        fprintf(stderr, "Could not unmask interrupt. Wrote %ld of %lu...\n", rv, sizeof(umask));
+        fprintf(stderr, "Could not unmask interrupt. Wrote %d of %u...\n", rv, sizeof(umask));
         return UIO_UMASK_IRQ_FAILED;
     }
     return 1;
@@ -212,7 +212,7 @@ int uio_mask_irq(uio_dev *dev)
     if (rv != (ssize_t)sizeof(umask))
     {
         fprintf(stderr, "%s Line %d: ", __func__, __LINE__);
-        fprintf(stderr, "Could not mask interrupt. Wrote %ld of %lu...\n", rv, sizeof(umask));
+        fprintf(stderr, "Could not mask interrupt. Wrote %d of %u...\n", rv, sizeof(umask));
         return UIO_MASK_IRQ_FAILED;
     }
     return 1;

@@ -62,7 +62,7 @@ typedef struct __attribute__((packed))
 void fprint_frame_hdr(FILE *stream, modem_frame_header_t *hdr)
 {
     fprintf(stream, "GUID      : 0x%x\n", hdr->ident);
-    fprintf(stream, "Pack ID   : 0x%lx\n", hdr->pack_id);
+    fprintf(stream, "Pack ID   : 0x%llx\n", hdr->pack_id);
     fprintf(stream, "Pack Sz   : 0x%x\n", hdr->pack_sz);
     fprintf(stream, "Frame ID  : 0x%x\n", hdr->frame_id);
     fprintf(stream, "Frame nums: 0x%x\n", hdr->num_frames);
@@ -86,7 +86,7 @@ typedef struct
  * bit is always assumed to be set, thus we only use 16 bits to
  * represent the 17 bit value.
  */
-static inline uint16_t crc16(char *data_p, uint16_t length)
+static inline uint16_t crc16(unsigned char *data_p, uint16_t length)
 {
     unsigned char i;
     unsigned int data;
