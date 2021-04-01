@@ -34,6 +34,11 @@
 #define DEFAULT_FRAME_SZ 1392 // 4072
 
 /**
+ * @brief TXRX_MTU_MIN sets the minimum MTU of the radio. Requires at least 8 bytes of data, with padding and frame header.
+ */
+#define TXRX_MTU_MIN sizeof(uint64_t) + FRAME_PADDING * sizeof(uint64_t) + sizeof(modem_frame_header_t)
+
+/**
  * @brief PACKET_GUID is the unique ID for space hauc, it is the bottom 32 bits of M_PI
  * declared in math.h (which is a double precision floating point number).
  * M_PI == 0x00000001 6f35b7e0
