@@ -110,8 +110,10 @@ int txmodem_write(txmodem *dev, const void *buf, ssize_t size)
         /* Calculate frame padding */
         size_t frame_padding = (frame_hdr->frame_sz) % sizeof(uint64_t);        // calculate how many bytes we are off by
         frame_padding = (frame_padding > 0) ? sizeof(uint64_t) - frame_padding : 0; // calculate proper padding
+#ifdef TXDEBUG
         if (frame_padding > 0)
             printf("%s: Frame padding = %u\n", __func__, frame_padding);
+#endif
         /* TX IP Core Frame Size */
         uint64_t dma_frame_sz = frame_hdr->frame_sz + frame_padding + sizeof(modem_frame_header_t) + FRAME_PADDING * sizeof(uint64_t);
         // dma_frame_sz += dma_frame_sz % MODEM_BYTE_ALIGN ? MODEM_BYTE_ALIGN - (dma_frame_sz % MODEM_BYTE_ALIGN) : 0; // 4-bytes aligned, will pad DMA buffer with extra zeros at the end if necessary
