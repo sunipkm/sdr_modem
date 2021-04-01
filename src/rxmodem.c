@@ -227,7 +227,9 @@ int rxmodem_stop(rxmodem *dev)
 static inline void getwaittime(struct timespec *ts)
 {
     clock_gettime(0, ts);
+#ifdef RXDEBUG
     printf("%s: Wait_sec: %u, wait_nsec: %u\n", __func__, ts->tv_sec, ts->tv_nsec);
+#endif
     ts->tv_sec += RXMODEM_TIMEOUT / 1000;
     ts->tv_nsec += (RXMODEM_TIMEOUT % 1000) * 1000000;
 }

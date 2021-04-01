@@ -116,7 +116,9 @@ int uio_init(uio_dev *dev, int uio_id)
     }
 
     ret = fscanf(fp, "0x%x", &offset);
+#ifdef UIO_DEBUG
     fprintf(stderr, "%s Line %d: %s %d\n", __func__, __LINE__, "UIO regmap offset read: ", offset);
+#endif
     fclose(fp);
     if (ret < 0)
     {

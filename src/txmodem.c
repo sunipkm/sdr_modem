@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
     timeinfo = localtime(&rawtime);
     char msg[(1 << 16) - 1];
     const char fmt_str[] = "\n\nTesting SPACE HAUC SDR.\n"
-                           "The date is: %02d-%02d-%04d, time is: %02d:%02d:%02d\n"
+                           "The date is: %04d-%02d-%02d, time is: %02d:%02d:%02d\n"
                            "Had I the heavens' embroidered cloths,\n"
                            "Enwrought with golden and silver light,\n"
                            "The blue and the dim and the dark cloths\n"
