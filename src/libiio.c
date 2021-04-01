@@ -341,12 +341,20 @@ int adradio_reconfigure_dds(adradio_t *dev)
 
 #ifdef IIO_UNIT_TEST
 #include <signal.h>
+#include <time.h>
 
 volatile sig_atomic_t done = 0;
 
 void sighandler(__notused int sig)
 {
     done = 1;
+}
+
+static inline uint64_t get_nsec()
+{
+    struct timespec mac_ts;
+    timespec_get(&mac_ts, TIME_UTC);
+    return (uint64_t)mac_ts.tv_sec * 1000000000L + ((uint64_t)mac_ts.tv_nsec);
 }
 
 int main()
@@ -368,8 +376,11 @@ int main()
         adradio_get_rx_lo(dev, &lo_freq);
         adradio_get_rx_samp(dev, &samp);
         adradio_get_rx_bw(dev, &bw);
+        uint64_t start, end;
+        start = get_nsec();
         adradio_get_rssi(dev, &rssi);
-        printf("RX LO: %lld | RX Samp: %lld | RX BW: %lld | RSSI: %lf\n", lo_freq, samp, bw, rssi);
+        end = get_nsec();
+        printf("RX LO: %lld | RX Samp: %lld | RX BW: %lld | RSSI: %lf | Time to get RSSI: %.3lf us\n", lo_freq, samp, bw, rssi, (end - start) * 0.001);
         sleep(1);
     }
     adradio_destroy(dev);
