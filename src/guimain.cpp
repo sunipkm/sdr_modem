@@ -167,7 +167,7 @@ void PhyWin(bool *active)
     ImGui::NextColumn();
     ImGui::Text("BW (Hz)");
     ImGui::NextColumn();
-    ImGui::Text("Power (dBm)");
+    ImGui::Text("Power/Gain (dBm/dB)");
     ImGui::NextColumn();
 
     adradio_get_tx_lo(phy, &lo);
@@ -183,13 +183,13 @@ void PhyWin(bool *active)
     }
     ImGui::Text("TX:");
     ImGui::NextColumn();
-    ImGui::Text("%ld", lo);
+    ImGui::Text("%lld", lo);
     ImGui::NextColumn();
-    ImGui::Text("%ld", samp);
+    ImGui::Text("%lld", samp);
     ImGui::NextColumn();
-    ImGui::Text("%ld", bw);
+    ImGui::Text("%lld", bw);
     ImGui::NextColumn();
-    ImGui::Text("%lf", gain);
+    ImGui::Text("%lf dBm", gain);
     ImGui::NextColumn();
 
     adradio_get_rx_lo(phy, &lo);
@@ -206,13 +206,13 @@ void PhyWin(bool *active)
     }
     ImGui::Text("RX:");
     ImGui::NextColumn();
-    ImGui::Text("%ld", lo);
+    ImGui::Text("%lld", lo);
     ImGui::NextColumn();
-    ImGui::Text("%ld", samp);
+    ImGui::Text("%lld", samp);
     ImGui::NextColumn();
-    ImGui::Text("%ld", bw);
+    ImGui::Text("%lld", bw);
     ImGui::NextColumn();
-    ImGui::Text("%lf", gain);
+    ImGui::Text("%lf dB", gain);
 
     ImGui::Columns(1);
     ImGui::Text("Set Outputs: ");
