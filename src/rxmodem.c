@@ -115,6 +115,11 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
 {
     if (dev == NULL)
         return -1;
+    dev->frame_ofst = NULL; // init
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutex_init(&rx_irq_thread_running, &attr);
+    pthread_mutexattr_destroy(&attr);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
@@ -228,9 +233,9 @@ static void *rx_irq_thread(void *__dev)
             goto rx_irq_thread_exit;
         }
         pthread_mutex_lock(&frame_ofst_m);
-        if (frame_num == 0)
-            dev->frame_ofst = (ssize_t *)malloc(sizeof(ssize_t));
-        else if (dev->frame_ofst != NULL)
+        if (dev->frame_ofst == NULL) // case: == 0
+            dev->frame_ofst = (ssize_t *)malloc(sizeof(ssize_t) * (frame_num + 1));
+        else
         {
 #ifdef RXDEBUG
             eprintf("%s: Realloc: Source %p, size = %u | ", __func__, dev->frame_ofst, frame_num);
@@ -450,7 +455,9 @@ ssize_t rxmodem_read(rxmodem *dev, uint8_t *buf, ssize_t size)
     for (int i = 0; i < dev->frame_num; i++)
     {
         modem_frame_header_t frame_hdr[1]; // frame header
+        pthread_mutex_lock(&frame_ofst_m);
         ssize_t ofst = (dev->frame_ofst)[i];
+        pthread_mutex_unlock(&frame_ofst_m);
 #ifdef RXDEBUG
         printf("%s: Offset %d = %ld\n", __func__, i, ofst);
 #endif
@@ -475,10 +482,6 @@ ssize_t rxmodem_read(rxmodem *dev, uint8_t *buf, ssize_t size)
         }
         total_read += frame_hdr->frame_sz;
     }
-    pthread_mutex_lock(&frame_ofst_m);
-    free(dev->frame_ofst);
-    dev->frame_ofst = NULL;
-    pthread_mutex_unlock(&frame_ofst_m);
     dev->frame_num = 0;
     return valid_read;
 }
@@ -526,6 +529,8 @@ void rxmodem_destroy(rxmodem *dev)
 {
     pthread_mutex_lock(&rx_irq_thread_running);
     pthread_mutex_unlock(&rx_irq_thread_running);
+    if (dev->frame_ofst != NULL)
+        free(dev->frame_ofst);
     rxmodem_stop(dev);                       // stop the modem for safety
     uio_write(dev->bus, RXMODEM_RESET, 0x1); // reset the modem IP
     rxmodem_fifo_rst();                      // reset the FIFO
