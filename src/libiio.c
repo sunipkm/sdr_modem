@@ -219,14 +219,22 @@ int adradio_ensm_mode(adradio_t *dev, enum ensm_mode mode)
     return iio_device_attr_write(dev->ad_phy, "ensm_mode", ensm_mode_str[mode]);
 }
 
-int adradio_enable_fir(adradio_t *dev, bool cond)
+int adradio_enable_fir(adradio_t *dev, enum iodev trx, bool cond)
 {
-    return iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", cond);
+    if (trx == TX)
+        return iio_channel_attr_write_bool(dev->tx_iq, "filter_fir_en", cond);
+    if (trx == RX)
+        return iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", cond);
+    return EXIT_FAILURE;
 }
 
-int adradio_check_fir(adradio_t *dev, bool *cond)
+int adradio_check_fir(adradio_t *dev, enum iodev trx, bool *cond)
 {
-    return iio_channel_attr_read_bool(dev->rx_iq, "filter_fir_en", cond);
+    if (trx == TX)
+        return iio_channel_attr_read_bool(dev->tx_iq, "filter_fir_en", cond);
+    if (trx == RX)
+        return iio_channel_attr_read_bool(dev->rx_iq, "filter_fir_en", cond);
+    return EXIT_FAILURE;
 }
 
 int adradio_load_fir(adradio_t *dev, const char *fname)
@@ -245,7 +253,13 @@ int adradio_load_fir(adradio_t *dev, const char *fname)
     ret = iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", false);
     if (ret != EXIT_SUCCESS)
     {
-        eprintf("%s: Could not disable FIR filter for application, exiting...\n", __func__);
+        eprintf("%s: Could not disable RX FIR filter for application, exiting...\n", __func__);
+        return ret;
+    }
+    ret = iio_channel_attr_write_bool(dev->tx_iq, "filter_fir_en", false);
+    if (ret != EXIT_SUCCESS)
+    {
+        eprintf("%s: Could not disable TX FIR filter for application, exiting...\n", __func__);
         return ret;
     }
     FILE *fp = fopen(fname, "r");
@@ -279,18 +293,19 @@ int adradio_load_fir(adradio_t *dev, const char *fname)
         perror("could not read FIR config from file");
         goto err_free_mem;
     }
+#ifdef IIO_DEBUG
+    eprintf("FIR Filter Contents: ");
+    for (ssize_t i = 0; i < rdsize; i++)
+        eprintf("%c", buf[i]);
+    eprinf("--EOF--");
+#endif
     ret = iio_device_attr_write_raw(dev->ad_phy, "filter_fir_config", buf, fsize);
     if (ret != EXIT_SUCCESS)
     {
         eprintf("%s: Could not load FIR filter config into PHY\n", __func__);
         goto err_free_mem;
     }
-    ret = iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", true);
-    if (ret != EXIT_SUCCESS)
-    {
-        eprintf("%s: Could not enable FIR filter config on PHY\n", __func__);
-        goto err_free_mem;
-    }
+    // DOES NOT AUTO ENABLE THE FILTERS
 err_free_mem:
     free(buf);
 err_close_file:

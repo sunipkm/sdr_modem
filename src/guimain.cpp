@@ -263,11 +263,17 @@ void PhyWin(bool *active)
         adradio_set_rx_hardwaregainmode(phy, (enum gain_mode)(gainmode + 1));
     }
     ImGui::Separator();
-    static bool ftr_en = true;
-    adradio_check_fir(phy, &ftr_en);
-    if (ImGui::Checkbox("Enable FIR Filter", &ftr_en))
+    static bool tx_ftr_en = true, rx_ftr_en = true;
+    adradio_check_fir(phy, TX, &tx_ftr_en);
+    adradio_check_fir(phy, RX, &rx_ftr_en);
+    if (ImGui::Checkbox("Enable TX FIR Filter", &tx_ftr_en))
     {
-        adradio_enable_fir(phy, ftr_en);
+        adradio_enable_fir(phy, TX, tx_ftr_en);
+    }
+    ImGui::SameLine();
+    if (ImGui::Checkbox("Enable RX FIR Filter", &rx_ftr_en))
+    {
+        adradio_enable_fir(phy, RX, rx_ftr_en);
     }
     if (ImGui::InputText("Filter File", ftr_fname, IM_ARRAYSIZE(ftr_fname), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {

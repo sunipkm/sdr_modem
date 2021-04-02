@@ -190,20 +190,22 @@ extern "C"
      * @brief Check if FIR filter is enabled on the radio
      * 
      * @param dev adradio_t struct
+     * @param trx TX or RX channel
      * @param cond FIR filter attribute
      * @return int EXIT_SUCCESS or EXIT_FAILURE
      */
-    int adradio_check_fir(adradio_t *dev, bool *cond);
+    int adradio_check_fir(adradio_t *dev, enum iodev trx, bool *cond);
     /**
      * @brief Enable or disable FIR filter on the radio
      * 
      * @param dev adradio_t struct
+     * @param trx TX or RX channel
      * @param cond enabled on true, disabled on false
      * @return int EXIT_SUCCESS or EXIT_FAILURE
      */
-    int adradio_enable_fir(adradio_t *dev, bool cond);
+    int adradio_enable_fir(adradio_t *dev, enum iodev trx, bool cond);
     /**
-     * @brief 
+     * @brief Load a FIR filter from file into device. NOTE: Does not enable the filters
      * 
      * @param dev adradio_t struct
      * @param fname 
