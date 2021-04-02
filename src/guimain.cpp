@@ -147,8 +147,8 @@ void PhyWin(bool *active)
     ImGui::Begin("Configure PHY", active);
     static bool firstrun = true;
     static long long lo, bw, samp, temp;
-    static int lo_rx, bw_rx, samp_rx;
-    static int lo_tx, bw_tx, samp_tx;
+    static float _lo_rx, _bw_rx, _samp_rx;
+    static float _lo_tx, _bw_tx, _samp_tx;
     static double rssi, gain;
     static float gain_rx, gain_tx;
     adradio_get_temp(phy, &temp);
@@ -176,9 +176,9 @@ void PhyWin(bool *active)
     adradio_get_tx_hardwaregain(phy, &gain);
     if (firstrun)
     {
-        lo_tx = lo;
-        bw_tx = bw;
-        samp_tx = samp;
+        _lo_tx = lo * 1e-9;
+        _bw_tx = bw * 1e-6;
+        _samp_tx = samp * 1e-6;
         gain_tx = gain;
     }
     ImGui::Text("TX:");
@@ -198,9 +198,9 @@ void PhyWin(bool *active)
     adradio_get_rx_hardwaregain(phy, &gain);
     if (firstrun)
     {
-        lo_rx = lo;
-        bw_rx = bw;
-        samp_rx = samp;
+        _lo_rx = lo * 1e-9;
+        _bw_rx = bw * 1e-6;
+        _samp_rx = samp * 1e-6;
         gain_rx = gain;
         firstrun = false;
     }
@@ -216,34 +216,34 @@ void PhyWin(bool *active)
 
     ImGui::Columns(1);
     ImGui::Text("Set Outputs: ");
-    if (ImGui::InputInt("TX LO", &lo_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("TX LO (GHz)", &_lo_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        adradio_set_tx_lo(phy, lo_tx);
+        adradio_set_tx_lo(phy, GHZ(_lo_tx));
     }
-    if (ImGui::InputInt("TX Samp", &samp_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("TX Samp (MHz)", &_samp_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        adradio_set_tx_samp(phy, samp_tx);
+        adradio_set_tx_samp(phy, MHZ(_samp_tx));
     }
-    if (ImGui::InputInt("TX BW", &bw_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("TX BW", &_bw_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        adradio_set_tx_bw(phy, bw_tx);
+        adradio_set_tx_bw(phy, MHZ(_bw_tx));
     }
     if (ImGui::InputFloat("TX Power", &gain_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         adradio_set_tx_hardwaregain(phy, gain_tx);
     }
 
-    if (ImGui::InputInt("RX LO", &lo_rx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("RX LO", &_lo_rx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        adradio_set_rx_lo(phy, lo_rx);
+        adradio_set_rx_lo(phy, GHZ(_lo_rx));
     }
-    if (ImGui::InputInt("RX Samp", &samp_rx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("RX Samp", &_samp_rx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        adradio_set_rx_samp(phy, samp_rx);
+        adradio_set_rx_samp(phy, MHZ(_samp_rx));
     }
-    if (ImGui::InputInt("RX BW", &bw_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("RX BW", &_bw_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        adradio_set_rx_bw(phy, bw_rx);
+        adradio_set_rx_bw(phy, MHZ(_bw_rx));
     }
     if (ImGui::InputFloat("RX Power", &gain_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
