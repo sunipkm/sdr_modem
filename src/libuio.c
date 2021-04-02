@@ -42,6 +42,8 @@ int uio_get_id(const char *devname)
         eprintf("%s: File name: %s\n", __func__, fname);
 #endif
         FILE *fp = fopen(fname, "r");
+        if (fp == NULL)
+            continue;
         memset(fname, 0x0, 256);
         ssize_t sz = fscanf(fp, "%s", fname);
 #ifdef UIO_DEBUG
