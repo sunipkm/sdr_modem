@@ -208,11 +208,11 @@ void PhyWin(bool *active)
         _bw_rx = bw * 1e-6;
         _samp_rx = samp * 1e-6;
         if (strncmp(curgainmode, gainmodestr[SLOW_ATTACK - 1], strlen(gainmodestr[SLOW_ATTACK - 1])) == 0)
-            gainmode = SLOW_ATTACK;
+            gainmode = SLOW_ATTACK - 1;
         else if (strncmp(curgainmode, gainmodestr[FAST_ATTACK - 1], strlen(gainmodestr[FAST_ATTACK - 1])) == 0)
-            gainmode = FAST_ATTACK;
+            gainmode = FAST_ATTACK - 1;
         else
-            gainmode = SLOW_ATTACK;
+            gainmode = SLOW_ATTACK - 1;
         firstrun = false;
     }
     ImGui::Text("RX:");

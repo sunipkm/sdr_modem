@@ -73,7 +73,7 @@ int uio_init(uio_dev *dev, int uio_id)
     char ffname[256];
     snprintf(ffname, 256, "/sys/class/uio/uio%d/name", uio_id);
     FILE *ffp = fopen(ffname, "r");
-    fscanf(ffp, "%s", &ffname);
+    fscanf(ffp, "%s", ffname);
     fprintf(stderr, "%s Line %d: %s %s\n", __func__, __LINE__, "UIO device name: ", ffname);
 #endif
     dev->pfd = (struct pollfd *)malloc(sizeof(struct pollfd));

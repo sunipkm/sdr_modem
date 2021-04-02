@@ -15,8 +15,10 @@ endif
 
 UNAME_S := $(shell uname -s)
 
-EDCFLAGS+= -I include/ -I drivers/ -I ./ -Wall -O3 -std=gnu11 -DADIDMA_NOIRQ -D_POSIX_SOURCE -I libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
+EDCFLAGS+= -I include/ -I drivers/ -I ./ -Wall -O3 -std=gnu11 -DADIDMA_NOIRQ -DTX_UNIT_TEST -DRX_UNIT_TEST -D_POSIX_SOURCE -I libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
 CXXFLAGS:= -I include/ -I imgui/include/ -I ./ -Wall -O3 -fpermissive -std=gnu++11 -I libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
+
+EDLDFLAGS += -lpthread -lm -liio
 LIBS = 
 
 ifeq ($(UNAME_S), Linux) #LINUX
@@ -52,15 +54,24 @@ COBJS=drivers/gpiodev/gpiodev.o \
 		src/adidma.o \
 		src/libiio.o \
 		src/libuio.o \
-		src/rxmodem.o \
-		src/txmodem.o
 
-GUITARGET=main.out
+TXOBJS=src/txmodem.o
+RXOBJS=src/txmodem.o
 
-all: $(LIBTARGET) $(GUITARGET)
+GUITARGET=phy.out
+TXTARGET=tx.out
+RXTARGET=rx.out
+
+all: $(LIBTARGET) $(GUITARGET) $(TXTARGET) $(RXTARGET)
 
 $(GUITARGET): $(LIBTARGET) $(COBJS) $(CPPOBJS)
 	$(CXX) -o $@ $(COBJS) $(CPPOBJS) $(LIBTARGET) $(LIBS)
+
+$(TXTARGET): $(COBJS) $(TXOBJS)
+	$(CC) -o $@ $(COBJS) $(TXOBJS) $(EDLDFLAGS)
+
+$(RXTARGET): $(COBJS) $(RXOBJS)
+	$(CC) -o $@ $(COBJS) $(RXOBJS) $(EDLDFLAGS)
 
 $(LIBTARGET): imgui
 	cd imgui && make && cd ..
@@ -74,7 +85,11 @@ $(LIBTARGET): imgui
 
 clean:
 	$(RM) $(GUITARGET)
+	$(RM) $(RXTARGET)
+	$(RM) $(TXTARGET)
 	$(RM) $(COBJS)
+	$(RM) $(RXOBJS)
+	$(RM) $(TXOBJS)
 	$(RM) $(CPPOBJS)
 
 spotless: clean

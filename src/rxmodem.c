@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
 {
     printf("Starting program...\n");
     rxmodem dev[1];
-    if (rxmodem_init(dev, 0, 2) < 0)
+    if (rxmodem_init(dev, uio_get_id("rx_ipcore"), uio_get_id("rx_dma")) < 0)
         return -1;
     rxmodem_reset(dev, dev->conf);
     ssize_t rcv_sz = rxmodem_receive(dev);

@@ -329,7 +329,7 @@ int main(int argc, char *argv[])
                            "It's just a whisper through the trees, my ears can hardly make it out\n"
                            "But I can hear it in my heart, vibrating strong as if she shouts\n"
                            "\n"
-                           /* "Oh Ariadne, I am coming, I just need to work this maze inside my head\n"
+                           "Oh Ariadne, I am coming, I just need to work this maze inside my head\n"
                            "I came here like you asked, I killed the beast, that part of me is dead\n"
                            "Oh Ariadne, I just need to work this maze inside my head\n"
                            "If only I'd have listened to you when you " /*"offered me that thread\n"
@@ -398,12 +398,14 @@ int main(int argc, char *argv[])
 
     ssize_t size = snprintf(msg, (1 << 16) - 1, fmt_str, timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
     txmodem dev[1];
-    if (txmodem_init(dev, 1, 3) < 0)
+    if (txmodem_init(dev, uio_get_id("tx_ipcore"), uio_get_id("tx_dma")) < 0)
         return -1;
     txmodem_reset(dev, 0);
-    printf("Press enter to transmit: ");
-    getchar();
-    txmodem_write(dev, msg, size);
+    printf("Enter MTU to transmit, enter . to continue with default MTU: ");
+    char buf[10];
+    scanf(" %s", buf);
+    dev->mtu = strtol(buf, 0x0, 10);
+    txmodem_write(dev, (uint8_t *)msg, size);
     return 0;
 }
 #endif
