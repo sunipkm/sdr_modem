@@ -31,22 +31,34 @@ int uio_get_id(const char *devname)
         eprintf("%s: Device name error, returning...\n", __func__);
         return ret;
     }
+#ifdef UIO_DEBUG
+        eprintf("%s: Check name: %s\n", __func__, devname);
+#endif
     for (int i = 0; i < UIO_MAX_DEVICE_ID; i++)
     {
         char fname[256];
         snprintf(fname, 256, "/sys/class/uio/uio%d/name", i);
+#ifdef UIO_DEBUG
+        eprintf("%s: File name: %s\n", __func__, fname);
+#endif
         FILE *fp = fopen(fname, "r");
-        fseek(fp, 0L, SEEK_END);
-        ssize_t sz = ftell(fp);
-        fseek(fp, 0L, SEEK_SET);
+        if (fp == NULL)
+            continue;
         memset(fname, 0x0, 256);
-        if (fread(fname, 0x1, sz, fp) != sz)
+        ssize_t sz = fscanf(fp, "%s", fname);
+#ifdef UIO_DEBUG
+        eprintf("%s: Read size: %d\n", __func__, sz);
+#endif        
+        if (sz <= 0)
         {
             fclose(fp);
             continue;
         }
         fclose(fp);
-        if (strncmp(fname, devname, sz) == 0)
+#ifdef UIO_DEBUG
+        eprintf("%s: File contents: %s\n", __func__, fname);
+#endif
+        if (strncmp(fname, devname, strlen(fname)) == 0)
         {
             ret = i;
             break;
