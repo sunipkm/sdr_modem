@@ -49,10 +49,9 @@ LIBTARGET=imgui/libimgui_glfw.a
 
 CPPOBJS=src/guimain.o
 
-COBJS=drivers/gpiodev/gpiodev.o \
-		src/adidma.o \
-		src/libiio.o \
-		src/libuio.o \
+COBJS=src/adidma.o \
+	src/libiio.o \
+	src/libuio.o \
 
 TXOBJS=src/txmodem.o
 RXOBJS=src/rxmodem.o
