@@ -144,25 +144,25 @@ adradio_t phy[1];
 bool show_phy_win = true;
 void PhyWin(bool *active)
 {
-    ImGui::Begin("Configure PHY", active);
+    ImGui::Begin("Configure AD9361", active);
     static bool firstrun = true;
     static long long lo, bw, samp, temp;
     static float _lo_rx, _bw_rx, _samp_rx;
     static float _lo_tx, _bw_tx, _samp_tx;
     static double rssi, gain;
     static float gain_tx;
-    static enum gain_mode gainmode;
-    static char *gainmodestr[] = {"Undefined", "slow_attack", "fast_attack"};
+    static int gainmode;
+    static char *gainmodestr[] = {"slow_attack", "fast_attack"};
     char curgainmode[32];
     adradio_get_rx_hardwaregainmode(phy, curgainmode, IM_ARRAYSIZE(curgainmode));
     adradio_get_temp(phy, &temp);
     adradio_get_rssi(phy, &rssi);
     ImGui::Columns(3, "phy_sensors", true);
-    ImGui::Text("AD9361 Temperature: %.3f °C", temp * 0.001);
+    ImGui::Text("Temperature: %.3f °C", temp * 0.001);
     ImGui::NextColumn();
-    ImGui::Text("AD9361 RSSI: %.2lf dB", rssi);
+    ImGui::Text("RSSI: %.2lf dB", rssi);
     ImGui::NextColumn();
-    ImGui::Text("AD9361 Gain Control Mode: %s", curgainmode);
+    ImGui::Text("Gain Control Mode: %s", curgainmode);
     
     ImGui::Columns(5, "phy_outputs", true);
     ImGui::Text(" ");
@@ -182,7 +182,7 @@ void PhyWin(bool *active)
     adradio_get_tx_hardwaregain(phy, &gain);
     if (firstrun)
     {
-        _lo_tx = lo * 1e-9;
+        _lo_tx = lo * 1e-6;
         _bw_tx = bw * 1e-6;
         _samp_tx = samp * 1e-6;
         gain_tx = gain;
@@ -204,12 +204,12 @@ void PhyWin(bool *active)
     adradio_get_rx_hardwaregain(phy, &gain);
     if (firstrun)
     {
-        _lo_rx = lo * 1e-9;
+        _lo_rx = lo * 1e-6;
         _bw_rx = bw * 1e-6;
         _samp_rx = samp * 1e-6;
-        if (strncmp(curgainmode, gainmodestr[SLOW_ATTACK], strlen(gainmodestr[SLOW_ATTACK])) == 0)
+        if (strncmp(curgainmode, gainmodestr[SLOW_ATTACK - 1], strlen(gainmodestr[SLOW_ATTACK - 1])) == 0)
             gainmode = SLOW_ATTACK;
-        else if (strncmp(curgainmode, gainmodestr[FAST_ATTACK], strlen(gainmodestr[FAST_ATTACK])) == 0)
+        else if (strncmp(curgainmode, gainmodestr[FAST_ATTACK - 1], strlen(gainmodestr[FAST_ATTACK - 1])) == 0)
             gainmode = FAST_ATTACK;
         else
             gainmode = SLOW_ATTACK;
@@ -243,7 +243,7 @@ void PhyWin(bool *active)
     {
         adradio_set_tx_hardwaregain(phy, gain_tx);
     }
-
+    ImGui::Separator();
     if (ImGui::InputFloat("RX LO (MHz)", &_lo_rx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         adradio_set_rx_lo(phy, MHZ(_lo_rx));
@@ -258,9 +258,10 @@ void PhyWin(bool *active)
     }
     if (ImGui::Combo("RX Gain Control Mode", (int *)&gainmode, gainmodestr, IM_ARRAYSIZE(gainmodestr)))
     {
-        adradio_set_rx_hardwaregainmode(phy, gainmode);
+        adradio_set_rx_hardwaregainmode(phy, (enum gain_mode)(gainmode + 1));
     }
-
+    ImGui::Separator();
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::End();
 }
 
@@ -272,7 +273,7 @@ int main(int, char **)
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         return 1;
-    GLFWwindow *window = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+OpenGL2 example", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(1280, 720, "AD9361 Configuration Utility", NULL, NULL);
     if (window == NULL)
         return 1;
     glfwMakeContextCurrent(window);
@@ -327,18 +328,8 @@ int main(int, char **)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-
-        {
-            ImGui::Begin("GUI Panel"); // Create a window called "Hello, world!" and append into it.
-
-            ImGui::Checkbox("AD9361 Configuration Window", &show_phy_win);
-
-            if (show_phy_win)
-                PhyWin(&show_phy_win);
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-            ImGui::End();
-        }
+        show_phy_win = true;
+        PhyWin(&show_phy_win);
 
         // Rendering
         ImGui::Render();
