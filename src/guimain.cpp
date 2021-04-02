@@ -35,35 +35,41 @@ static void glfw_error_callback(int error, const char *description)
 #include <pthread.h>
 #include <string.h>
 #include <signal.h>
-#include <openssl/md5.h>
+#include <errno.h>
+
+#define eprintf(...) \
+    fprintf(stderr, __VA_ARGS__); \
+    fflush(stderr) 
+
+// #include <openssl/md5.h>
 
 volatile sig_atomic_t done = 0;
-void sighandler(__notused int sig)
+void sighandler(int sig)
 {
     done = 1;
 }
 
-static char md5digest[MD5_DIGEST_LENGTH];
+// static char md5digest[MD5_DIGEST_LENGTH];
 
-void md5sum(const char *fname)
-{
-    if (fname == NULL)
-        return;
-    MD5_CTX c;
-    char buf[512];
-    ssize_t bytes;
-    memset(md5digest, 0x0, MD5_DIGEST_LENGTH);
-    MD5_Init(&c);
-    FILE *fp = fopen(fname, "rb");
-    do
-    {
-        bytes = fread(buf, 0x1, 512, fp);
-        if (bytes > 0)
-            MD5_Update(&c, buf, bytes);
-    } while (bytes == 512);
-    fclose(fp);
-    MD5_Final(md5digest, &c);
-}
+// void md5sum(const char *fname)
+// {
+//     if (fname == NULL)
+//         return;
+//     MD5_CTX c;
+//     char buf[512];
+//     ssize_t bytes;
+//     memset(md5digest, 0x0, MD5_DIGEST_LENGTH);
+//     MD5_Init(&c);
+//     FILE *fp = fopen(fname, "rb");
+//     do
+//     {
+//         bytes = fread(buf, 0x1, 512, fp);
+//         if (bytes > 0)
+//             MD5_Update(&c, buf, bytes);
+//     } while (bytes == 512);
+//     fclose(fp);
+//     MD5_Final(md5digest, &c);
+// }
 
 typedef struct
 {
@@ -87,7 +93,7 @@ bool txthread_send_file = false;
 char txthread_send_fname[256];
 txt_buf send_txt[1];
 
-void *rxthread_fcn(__notused void *tid)
+void *rxthread_fcn(void *tid)
 {
     rxmodem dev[1];
     if (rxmodem_init(dev, 0, 2) < 0)
@@ -96,7 +102,7 @@ void *rxthread_fcn(__notused void *tid)
         return NULL;
     }
     memset(rcv_txt, 0x0, sizeof(rcv_txt));
-    pthread_mutex_init(rcv_txt->lock);
+    pthread_mutex_init(rcv_txt->lock, NULL);
     rxmodem_reset(dev, dev->conf);
     while (!done)
     {
@@ -119,7 +125,7 @@ void *rxthread_fcn(__notused void *tid)
             }
             rcv_txt->buf = (char *)malloc(rcv_sz);
             rcv_txt->len = rcv_sz;
-            ssize_t rd_sz = rxmodem_read(dev, rcv_txt->buf, rcv_txt->len);
+            ssize_t rd_sz = rxmodem_read(dev, (uint8_t *)(rcv_txt->buf), rcv_txt->len);
             pthread_mutex_unlock(rcv_txt->lock);
             if (rcv_sz != rd_sz)
             {
@@ -133,8 +139,124 @@ void *rxthread_fcn(__notused void *tid)
     }
 }
 
+adradio_t phy[1];
+
+bool show_phy_win = true;
+void PhyWin(bool *active)
+{
+    ImGui::Begin("Configure PHY", active);
+    static bool firstrun = true;
+    static long long lo, bw, samp, temp;
+    static int lo_rx, bw_rx, samp_rx;
+    static int lo_tx, bw_tx, samp_tx;
+    static double rssi, gain;
+    static float gain_rx, gain_tx;
+    adradio_get_temp(phy, &temp);
+    adradio_get_rssi(phy, &rssi);
+    ImGui::Columns(2, "phy_sensors", true);
+    ImGui::Text("AD9361 Temperature: %.3f °C", temp * 0.001);
+    ImGui::NextColumn();
+    ImGui::Text("AD9361 RSSI: %.2lf dB", rssi);
+    
+    ImGui::Columns(5, "phy_outputs", true);
+    ImGui::Text(" ");
+    ImGui::NextColumn();
+    ImGui::Text("LO (Hz)");
+    ImGui::NextColumn();
+    ImGui::Text("Samp (Hz)");
+    ImGui::NextColumn();
+    ImGui::Text("BW (Hz)");
+    ImGui::NextColumn();
+    ImGui::Text("Power (dBm)");
+    ImGui::NextColumn();
+
+    adradio_get_tx_lo(phy, &lo);
+    adradio_get_tx_bw(phy, &bw);
+    adradio_get_tx_samp(phy, &samp);
+    adradio_get_tx_hardwaregain(phy, &gain);
+    if (firstrun)
+    {
+        lo_tx = lo;
+        bw_tx = bw;
+        samp_tx = samp;
+        gain_tx = gain;
+    }
+    ImGui::Text("TX:");
+    ImGui::NextColumn();
+    ImGui::Text("%ld", lo);
+    ImGui::NextColumn();
+    ImGui::Text("%ld", samp);
+    ImGui::NextColumn();
+    ImGui::Text("%ld", bw);
+    ImGui::NextColumn();
+    ImGui::Text("%lf", gain);
+    ImGui::NextColumn();
+
+    adradio_get_rx_lo(phy, &lo);
+    adradio_get_rx_bw(phy, &bw);
+    adradio_get_rx_samp(phy, &samp);
+    adradio_get_rx_hardwaregain(phy, &gain);
+    if (firstrun)
+    {
+        lo_rx = lo;
+        bw_rx = bw;
+        samp_rx = samp;
+        gain_rx = gain;
+        firstrun = false;
+    }
+    ImGui::Text("RX:");
+    ImGui::NextColumn();
+    ImGui::Text("%ld", lo);
+    ImGui::NextColumn();
+    ImGui::Text("%ld", samp);
+    ImGui::NextColumn();
+    ImGui::Text("%ld", bw);
+    ImGui::NextColumn();
+    ImGui::Text("%lf", gain);
+
+    ImGui::Columns(1);
+    ImGui::Text("Set Outputs: ");
+    if (ImGui::InputInt("TX LO", &lo_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        adradio_set_tx_lo(phy, lo_tx);
+    }
+    if (ImGui::InputInt("TX Samp", &samp_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        adradio_set_tx_samp(phy, samp_tx);
+    }
+    if (ImGui::InputInt("TX BW", &bw_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        adradio_set_tx_bw(phy, bw_tx);
+    }
+    if (ImGui::InputFloat("TX Power", &gain_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        adradio_set_tx_hardwaregain(phy, gain_tx);
+    }
+
+    if (ImGui::InputInt("RX LO", &lo_rx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        adradio_set_rx_lo(phy, lo_rx);
+    }
+    if (ImGui::InputInt("RX Samp", &samp_rx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        adradio_set_rx_samp(phy, samp_rx);
+    }
+    if (ImGui::InputInt("RX BW", &bw_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        adradio_set_rx_bw(phy, bw_rx);
+    }
+    if (ImGui::InputFloat("RX Power", &gain_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        adradio_set_rx_hardwaregain(phy, gain_rx);
+    }
+
+    ImGui::End();
+}
+
 int main(int, char **)
 {
+    if (adradio_init(phy) != EXIT_SUCCESS)
+        return 0;
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
@@ -177,8 +299,6 @@ int main(int, char **)
     //IM_ASSERT(font != NULL);
 
     // Our state
-    bool show_demo_window = true;
-    bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Main loop
@@ -196,40 +316,13 @@ int main(int, char **)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
 
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
-            static float f = 0.0f;
-            static int counter = 0;
+            ImGui::Begin("GUI Panel"); // Create a window called "Hello, world!" and append into it.
 
-            ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
-
-            ImGui::Text("This is some useful text.");          // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
-
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);             // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button")) // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
+            ImGui::Checkbox("AD9361 Configuration Window", &show_phy_win);
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-            ImGui::End();
-        }
-
-        // 3. Show another simple window.
-        if (show_another_window)
-        {
-            ImGui::Begin("Another Window", &show_another_window); // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
             ImGui::End();
         }
 
@@ -261,5 +354,6 @@ int main(int, char **)
     glfwDestroyWindow(window);
     glfwTerminate();
 
+    adradio_destroy(phy);
     return 0;
 }
