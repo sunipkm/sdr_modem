@@ -45,13 +45,14 @@ extern "C"
 
     typedef struct
     {
-        struct iio_context *ctx;
-        struct iio_device *ad_phy;
-        struct iio_device *dds_lpc;
-        struct iio_channel *tx_lo;
-        struct iio_channel *rx_lo;
-        struct iio_channel *tx_iq;
-        struct iio_channel *rx_iq;
+        struct iio_context *ctx; /// IIO Context
+        struct iio_device *ad_phy; /// AD9361-Phy device
+        struct iio_device *dds_lpc; /// CF-DDS-LPC-CORE device
+        struct iio_channel *temp; /// Temperature channel
+        struct iio_channel *tx_lo; /// TX Carrier
+        struct iio_channel *rx_lo; /// RX Carrier
+        struct iio_channel *tx_iq; /// TX IQ
+        struct iio_channel *rx_iq; /// RX IQ
     } adradio_t;
 
     /**
@@ -194,6 +195,46 @@ extern "C"
      * @return int EXIT_SUCCESS or EXIT_FAILURE
      */
     int adradio_reconfigure_dds(adradio_t *dev);
+    /**
+     * @brief Apply hardware gain
+     * 
+     * @param dev adradio_t struct
+     * @param gain Gain to be applied
+     * @return int EXIT_SUCCESS or EXIT_FAILURE
+     */
+    int adradio_set_tx_hardwaregain(adradio_t *dev, double gain);
+    /**
+     * @brief Get hardware gain
+     * 
+     * @param dev adradio_t struct
+     * @param gain Gain to be read
+     * @return int EXIT_SUCCESS or EXIT_FAILURE
+     */
+    int adradio_get_tx_hardwaregain(adradio_t *dev, double *gain);
+    /**
+     * @brief Apply hardware gain
+     * 
+     * @param dev adradio_t struct
+     * @param gain Gain to be applied
+     * @return int EXIT_SUCCESS or EXIT_FAILURE
+     */
+    int adradio_set_rx_hardwaregain(adradio_t *dev, double gain);
+    /**
+     * @brief Get hardware gain
+     * 
+     * @param dev adradio_t struct
+     * @param gain Gain to be read
+     * @return int EXIT_SUCCESS or EXIT_FAILURE
+     */
+    int adradio_get_rx_hardwaregain(adradio_t *dev, double *gain);
+    /**
+     * @brief Get AD9361 temperature
+     * 
+     * @param dev adradio_t struct
+     * @param temp Temperature of the chip in milicentigrade
+     * @return int EXIT_SUCCESS or EXIT_FAILURE
+     */
+    int adradio_get_temp(adradio_t *dev, long long *temp);
 #ifdef __cplusplus
 }
 #endif

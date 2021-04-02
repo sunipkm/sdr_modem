@@ -74,10 +74,19 @@ int adradio_init(adradio_t *dev)
         eprintf("%s: Could not find channel RX IQ, exiting...", __func__);
         goto exit_failure_tx_iq;
     }
-    if (adradio_reconfigure_dds(dev) != EXIT_SUCCESS)
+    // try to open temp sensor channel
+    dev->temp = iio_device_find_channel(dev->ad_phy, "temp0", false);
+    if (dev->temp == NULL)
+    {
+        eprintf("%s: Could not find channel RX IQ, exiting...", __func__);
         goto exit_failure_rx_iq;
+    }
+    if (adradio_reconfigure_dds(dev) != EXIT_SUCCESS)
+        goto exit_failure_tempsensor;
     else
         return EXIT_SUCCESS;
+exit_failure_tempsensor:
+    iio_channel_disable(dev->temp);
 exit_failure_rx_iq:
     iio_channel_disable(dev->rx_iq);
 exit_failure_tx_iq:
@@ -99,6 +108,7 @@ void adradio_destroy(adradio_t *dev)
     iio_channel_disable(dev->tx_iq);
     iio_channel_disable(dev->rx_lo);
     iio_channel_disable(dev->tx_lo);
+    iio_channel_disable(dev->temp);
     iio_context_destroy(dev->ctx);
 }
 
@@ -160,6 +170,31 @@ int adradio_set_rx_bw(adradio_t *dev, long long freq)
 int adradio_get_rx_bw(adradio_t *dev, long long *freq)
 {
     return iio_channel_attr_read_longlong(dev->rx_iq, "rf_bandwidth", freq);
+}
+
+int adradio_set_tx_hardwaregain(adradio_t *dev, double gain)
+{
+    return iio_channel_attr_write_double(dev->tx_iq, "hardwaregain", gain);
+}
+
+int adradio_get_tx_hardwaregain(adradio_t *dev, double *gain)
+{
+    return iio_channel_attr_read_double(dev->tx_iq, "hardwaregain", gain);
+}
+
+int adradio_set_rx_hardwaregain(adradio_t *dev, double gain)
+{
+    return iio_channel_attr_write_double(dev->rx_iq, "hardwaregain", gain);
+}
+
+int adradio_get_rx_hardwaregain(adradio_t *dev, double *gain)
+{
+    return iio_channel_attr_read_double(dev->rx_iq, "hardwaregain", gain);
+}
+
+int adradio_get_temp(adradio_t *dev, long long *temp)
+{
+    return iio_channel_attr_read_longlong(dev->temp, "input", temp);
 }
 
 int adradio_get_rssi(adradio_t *dev, double *rssi)
@@ -369,20 +404,23 @@ int main()
     signal(SIGINT, &sighandler);
     while (!done)
     {
-        long long lo_freq, samp, bw;
-        double rssi;
+        long long lo_freq, samp, bw, temp;
+        double gain, rssi;
         adradio_get_tx_lo(dev, &lo_freq);
         adradio_get_tx_samp(dev, &samp);
         adradio_get_tx_bw(dev, &bw);
-        printf("TX LO: %lld | TX Samp: %lld | TX BW: %lld\n", lo_freq, samp, bw);
+        adradio_get_tx_hardwaregain(dev, &gain);
+        adradio_get_temp(dev, &temp);
+        printf("TX LO: %lld | TX Samp: %lld | TX BW: %lld | TX Gain: %lf | Temp: %.3lf\n", lo_freq, samp, bw, gain, temp * 0.001);
         adradio_get_rx_lo(dev, &lo_freq);
         adradio_get_rx_samp(dev, &samp);
         adradio_get_rx_bw(dev, &bw);
+        adradio_get_tx_hardwaregain(dev, &gain);
         uint64_t start, end;
         start = get_nsec();
         adradio_get_rssi(dev, &rssi);
         end = get_nsec();
-        printf("RX LO: %lld | RX Samp: %lld | RX BW: %lld | RSSI: %lf | Time to get RSSI: %.3lf us\n", lo_freq, samp, bw, rssi, (end - start) * 0.001);
+        printf("RX LO: %lld | RX Samp: %lld | RX BW: %lld | RX Gain: %lf | RSSI: %lf\n", lo_freq, samp, bw, gain, rssi);
         sleep(1);
     }
     adradio_destroy(dev);
