@@ -297,10 +297,10 @@ int adradio_load_fir(adradio_t *dev, const char *fname)
     eprintf("FIR Filter Contents: ");
     for (ssize_t i = 0; i < rdsize; i++)
         eprintf("%c", buf[i]);
-    eprinf("--EOF--");
+    eprintf("--EOF--");
 #endif
-    ret = iio_device_attr_write_raw(dev->ad_phy, "filter_fir_config", buf, fsize);
-    if (ret != EXIT_SUCCESS)
+    ret = iio_device_attr_write_raw(dev->ad_phy, "filter_fir_config", buf, rdsize);
+    if (ret != rdsize)
     {
         eprintf("%s: Could not load FIR filter config into PHY\n", __func__);
         goto err_free_mem;
