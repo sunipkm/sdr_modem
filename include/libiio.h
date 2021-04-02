@@ -185,7 +185,16 @@ extern "C"
      * @param mode 
      * @return int EXIT_SUCCESS or EXIT_FAILURE
      */
-    int adradio_ensm_mode(adradio_t *dev, enum ensm_mode mode);
+    int adradio_set_ensm_mode(adradio_t *dev, enum ensm_mode mode);
+    /**
+     * @brief 
+     * 
+     * @param dev 
+     * @param buf 
+     * @param len 
+     * @return int 
+     */
+    int adradio_get_ensm_mode(adradio_t *dev, char *buf, ssize_t len);
     /**
      * @brief Check if FIR filter is enabled on the radio
      * 

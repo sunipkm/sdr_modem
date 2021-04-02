@@ -153,12 +153,24 @@ void PhyWin(bool *active)
     static float gain_tx;
     static int gainmode;
     static char *gainmodestr[] = {"slow_attack", "fast_attack"};
+    static char *phymodestr[] = {"Sleep", "FDD", "TDD"};
     static char ftr_fname[256];
+    static char ensm_mode[20];
+    enum ensm_mode phymode;
     char curgainmode[32];
+    adradio_get_ensm_mode(phy, ensm_mode, 20);
+    if (strncmp(ensm_mode, "fdd", 20) == 0)
+        phymode = FDD;
+    else if (strncmp(ensm_mode, "sleep", 20) == 0)
+        phymode = SLEEP;
+    else if (strncmp(ensm_mode, "tdd", 20) == 0)
+        phymode = TDD;
     adradio_get_rx_hardwaregainmode(phy, curgainmode, IM_ARRAYSIZE(curgainmode));
     adradio_get_temp(phy, &temp);
     adradio_get_rssi(phy, &rssi);
-    ImGui::Columns(3, "phy_sensors", true);
+    ImGui::Columns(4, "phy_sensors", true);
+    ImGui::Text("System Mode: %s", ensm_mode);
+    ImGui::NextColumn();
     ImGui::Text("Temperature: %.3f °C", temp * 0.001);
     ImGui::NextColumn();
     ImGui::Text("RSSI: %.2lf dB", rssi);
@@ -290,6 +302,10 @@ void PhyWin(bool *active)
         }
     }
     ImGui::Separator();
+    if (ImGui::Combo("AD9361 Mode", (int *)phymode, phymodestr, IM_ARRAYSIZE(phymodestr)))
+    {
+        adradio_set_ensm_mode(phy, phymode);
+    }
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::End();
 }
@@ -365,7 +381,7 @@ int main(int, char **)
 
         show_phy_win = true;
         ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(712, 378));
+        // ImGui::SetNextWindowSize(ImVec2(712, 378));
         PhyWin(&show_phy_win);
 
         // Rendering

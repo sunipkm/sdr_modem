@@ -81,6 +81,11 @@ int txmodem_write(txmodem *dev, uint8_t *buf, ssize_t size)
     ssize_t max_frame_sz = dev->mtu + sizeof(modem_frame_header_t) + ((FRAME_PADDING + 1) * sizeof(uint64_t)); // mtu + frame header + padding + frame length for TX make up one frame in mem
     int max_num_frames = (dev->max_pack_sz) / (max_frame_sz);
     int num_frames = (size / dev->mtu) + ((size % dev->mtu) > 0);
+    if (num_frames * max_frame_sz >= dev->max_pack_sz)
+    {
+        eprintf("%s: Total required size exceeds buffer memory size", __func__);
+        return -1;
+    }
 #ifdef TXDEBUG
     eprintf("%s: Max Frames: %d | Frames: %d | Size: %ld\n", __func__, max_num_frames, num_frames, size);
 #endif

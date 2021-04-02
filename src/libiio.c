@@ -212,11 +212,16 @@ int adradio_get_rssi(adradio_t *dev, double *rssi)
     return iio_channel_attr_read_double(dev->rx_iq, "rssi", rssi);
 }
 
-int adradio_ensm_mode(adradio_t *dev, enum ensm_mode mode)
+int adradio_set_ensm_mode(adradio_t *dev, enum ensm_mode mode)
 {
     if ((mode < SLEEP) || (mode > TDD))
         return EXIT_FAILURE;
     return iio_device_attr_write(dev->ad_phy, "ensm_mode", ensm_mode_str[mode]);
+}
+
+int adradio_get_ensm_mode(adradio_t *dev, char *buf, ssize_t len)
+{
+    return iio_device_attr_read(dev, "ensm_mode", buf, len);
 }
 
 int adradio_enable_fir(adradio_t *dev, enum iodev trx, bool cond)
