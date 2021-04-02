@@ -158,6 +158,12 @@ int txmodem_write(txmodem *dev, uint8_t *buf, ssize_t size)
 #endif
     if (num_frames <= 5)
         return adidma_write(dev->dma, 0x0, frame_ofst, 0);
+    else // create back pressure
+    {
+        memset(dev->dma->mem_virt_addr, 0x0, max_frame_sz--);
+        memcpy(dev->dma->mem_virt_addr, &max_frame_sz, sizeof(uint64_t));
+        return adidma_write(dev->dma, 0x0, max_frame_sz, 0);
+    }
     return 0;
 }
 
