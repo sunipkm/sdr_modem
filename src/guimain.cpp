@@ -308,7 +308,7 @@ int main(int, char **)
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         return 1;
-    GLFWwindow *window = glfwCreateWindow(1280, 720, progname, NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(712, 378, progname, NULL, NULL);
     if (window == NULL)
         return 1;
     glfwMakeContextCurrent(window);
@@ -364,6 +364,8 @@ int main(int, char **)
         ImGui::NewFrame();
 
         show_phy_win = true;
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(ImVec2(712, 378));
         PhyWin(&show_phy_win);
 
         // Rendering
