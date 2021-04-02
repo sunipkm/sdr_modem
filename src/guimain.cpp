@@ -302,7 +302,7 @@ void PhyWin(bool *active)
         }
     }
     ImGui::Separator();
-    if (ImGui::Combo("AD9361 Mode", (int *)phymode, phymodestr, IM_ARRAYSIZE(phymodestr)))
+    if (ImGui::Combo("AD9361 Mode", (int *)&phymode, phymodestr, IM_ARRAYSIZE(phymodestr)))
     {
         adradio_set_ensm_mode(phy, phymode);
     }
