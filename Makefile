@@ -56,7 +56,7 @@ COBJS=drivers/gpiodev/gpiodev.o \
 		src/libuio.o \
 
 TXOBJS=src/txmodem.o
-RXOBJS=src/txmodem.o
+RXOBJS=src/rxmodem.o
 
 GUITARGET=phy.out
 TXTARGET=tx.out
