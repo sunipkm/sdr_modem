@@ -151,6 +151,8 @@ int txmodem_write(txmodem *dev, uint8_t *buf, ssize_t size)
 #ifdef TX_EVERY_FRAME
         frame_ofst = 0;
         adidma_write(dev->dma, 0x0, dma_frame_sz + sizeof(uint64_t), 0);
+        if ((num_frames > 5) && ((i % 4) == 0) && (i > 0))
+            usleep(1000);
 #endif
     }
 #ifndef TX_EVERY_FRAME
