@@ -32,6 +32,7 @@ static pthread_cond_t rx_rcv;
 static pthread_mutex_t rx_rcv_m;
 static pthread_mutex_t rx_write;
 static pthread_mutex_t frame_ofst_m;
+static pthread_mutex_t rx_irq_thread_running;
 
 #define RX_FIFO_RST "960"
 #define RX_FIFO_RST_TOUT 100000 // us
@@ -171,6 +172,7 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
 
 static void *rx_irq_thread(void *__dev)
 {
+    pthread_mutex_lock(&rx_irq_thread_running);
     int retcode = 1;
     rxmodem *dev = (rxmodem *)__dev;
     rxmodem_reset(dev, dev->conf);
@@ -280,6 +282,7 @@ rx_irq_thread_exit:
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
     rxmodem_stop(dev);
+    pthread_mutex_unlock(&rx_irq_thread_running);
     // dev->retcode = retcode;
     return NULL;
 }
@@ -521,6 +524,8 @@ int rxmodem_reset(rxmodem *dev, rxmodem_conf_t *conf)
 
 void rxmodem_destroy(rxmodem *dev)
 {
+    pthread_mutex_lock(&rx_irq_thread_running);
+    pthread_mutex_unlock(&rx_irq_thread_running);
     rxmodem_stop(dev);                       // stop the modem for safety
     uio_write(dev->bus, RXMODEM_RESET, 0x1); // reset the modem IP
     rxmodem_fifo_rst();                      // reset the FIFO
