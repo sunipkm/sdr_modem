@@ -16,8 +16,8 @@
 extern "C" {
 #endif
 
-#include <libuio.h>
-#include <adidma.h>
+#include "libuio.h"
+#include "adidma.h"
 #include <pthread.h>
 #include <stdint.h>
 #include "txrx_packdef.h"

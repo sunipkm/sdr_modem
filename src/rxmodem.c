@@ -13,7 +13,6 @@
 #include "adidma.h"
 #include "rxmodem.h"
 #include "txrx_packdef.h"
-#include "gpiodev/gpiodev.h"
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -33,12 +32,85 @@ static pthread_cond_t rx_rcv;
 static pthread_mutex_t rx_rcv_m;
 static pthread_mutex_t rx_write;
 
-#define RX_FIFO_RST 17 // GPIO 17 resets the FIFO contents
+#define RX_FIFO_RST "960"
+#define RX_FIFO_RST_TOUT 100000 // us
+
+static int rxmodem_fifo_rst()
+{
+    FILE *fp;
+    ssize_t size;
+    fp = fopen("/sys/class/gpio/export", "w");
+    if (fp == NULL)
+    {
+        eprintf("%s: Error opening ", __func__);
+        perror("gpioexport: ");
+        goto exitfunc;
+    }
+    size = fprintf(fp, "%s", RX_FIFO_RST);
+    if (size <= 0)
+    {
+        eprintf("%s: Error writing to ", __func__);
+        perror("gpioexport: ");
+        goto closefile;
+    }
+    fclose(fp);
+    usleep(10000);
+    fp = fopen("/sys/class/gpio/gpio" RX_FIFO_RST "/direction", "w");
+    if (fp == NULL)
+    {
+        eprintf("%s: Error opening ", __func__);
+        perror("gpiodirection: ");
+        goto exitfunc;
+    }
+    size = fprintf(fp, "out");
+    if (size <= 0)
+    {
+        eprintf("%s: Error writing to ", __func__);
+        perror("gpiodirection: ");
+        goto closefile;
+    }
+    fclose(fp);
+    usleep(10000);
+    fp = fopen("/sys/class/gpio/gpio" RX_FIFO_RST "/value", "w");
+    if (fp == NULL)
+    {
+        eprintf("%s: Error opening ", __func__);
+        perror("gpiovalue: ");
+        goto exitfunc;
+    }
+    size = fprintf(fp, "1");
+    if (size <= 0)
+    {
+        eprintf("%s: Error writing to ", __func__);
+        perror("gpiovalue: ");
+        goto closefile;
+    }
+    fclose(fp);
+    usleep(RX_FIFO_RST_TOUT);
+    fp = fopen("/sys/class/gpio/gpio" RX_FIFO_RST "/value", "w");
+    if (fp == NULL)
+    {
+        eprintf("%s: Error opening ", __func__);
+        perror("gpiovalue: ");
+        goto exitfunc;
+    }
+    size = fprintf(fp, "0");
+    if (size <= 0)
+    {
+        eprintf("%s: Error writing to ", __func__);
+        perror("gpiovalue: ");
+        goto closefile;
+    }
+    fclose(fp);
+    return EXIT_SUCCESS;
+closefile:
+    fclose(fp);
+exitfunc:
+    return EXIT_FAILURE;
+}
 
 int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
 {
-    if (gpioSetMode(RX_FIFO_RST, GPIO_OUT) < 0)
-        return -1;
     if (dev == NULL)
         return -1;
 #ifdef RXDEBUG
@@ -104,9 +176,9 @@ static void *rx_irq_thread(void *__dev)
     // clear memory for rx
     memset(dev->dma->mem_virt_addr, 0x0, dev->dma->mem_sz);
     // Clear FIFO contents in the beginning by toggling the RST pin
-    gpioWrite(RX_FIFO_RST, GPIO_HIGH);
-    usleep(100000); // 100 ms to clear FIFO
-    gpioWrite(RX_FIFO_RST, GPIO_LOW);
+    int fifo_rst_count = 0;
+    while ((rxmodem_fifo_rst() == EXIT_FAILURE) && (fifo_rst_count < 10))
+        fifo_rst_count++;
     // set up for the first interrupt
     if ((dev->retcode = rxmodem_start(dev)) < 0)
     {
@@ -182,6 +254,8 @@ static void *rx_irq_thread(void *__dev)
 #ifdef RXDEBUG
         eprintf("%s: Frame number: %d, loop ID: %d\n", __func__, frame_num, loop_id++);
 #endif
+        if (dev->rx_done)
+            break;
         dev->retcode = adidma_read(dev->dma, ofst, frame_sz + frame_num - 1 + sizeof(uint32_t));
 #ifdef RXDEBUG
         eprintf("%s: %d\n", __func__, __LINE__);
@@ -359,7 +433,7 @@ ssize_t rxmodem_receive(rxmodem *dev)
     }
     retcode = frame_hdr->pack_sz; // on success or timeout, send the proper size
 rxmodem_receive_end:
-    // pthread_join(dev->thr[0], NULL);
+    dev->rx_done = 1; // indicate completion
     return retcode;
 }
 
@@ -443,11 +517,9 @@ void rxmodem_destroy(rxmodem *dev)
 {
     rxmodem_stop(dev);                       // stop the modem for safety
     uio_write(dev->bus, RXMODEM_RESET, 0x1); // reset the modem IP
-    gpioWrite(RX_FIFO_RST, GPIO_HIGH);       // reset the FIFO buffer
-    usleep(10000);
-    gpioWrite(RX_FIFO_RST, GPIO_LOW);
-    uio_destroy(dev->bus);    // close the UIO device handle
-    adidma_destroy(dev->dma); // close the DMA engine handle
+    rxmodem_fifo_rst();                      // reset the FIFO
+    uio_destroy(dev->bus);                   // close the UIO device handle
+    adidma_destroy(dev->dma);                // close the DMA engine handle
 }
 
 #ifdef RX_UNIT_TEST
@@ -460,7 +532,7 @@ int main(int argc, char *argv[])
 {
     printf("Starting program...\n");
     rxmodem dev[1];
-    if (rxmodem_init(dev, 0, 2) < 0)
+    if (rxmodem_init(dev, uio_get_id("rx_ipcore"), uio_get_id("rx_dma")) < 0)
         return -1;
     rxmodem_reset(dev, dev->conf);
     ssize_t rcv_sz = rxmodem_receive(dev);

@@ -34,6 +34,12 @@ extern "C"
         TDD
     };
 
+    enum gain_mode
+    {
+        SLOW_ATTACK = 1,
+        FAST_ATTACK
+    };
+
     /* common RX and TX streaming params */
     typedef struct
     {
@@ -212,13 +218,22 @@ extern "C"
      */
     int adradio_get_tx_hardwaregain(adradio_t *dev, double *gain);
     /**
-     * @brief Apply hardware gain
+     * @brief Change RX Gain mode between slow_attack and fast_attack
      * 
      * @param dev adradio_t struct
-     * @param gain Gain to be applied
+     * @param gain Gain mode setting
      * @return int EXIT_SUCCESS or EXIT_FAILURE
      */
-    int adradio_set_rx_hardwaregain(adradio_t *dev, double gain);
+    int adradio_set_rx_hardwaregainmode(adradio_t *dev, enum gain_mode mode);
+    /**
+     * @brief Get current RX Gain control mode
+     * 
+     * @param dev adradio_t struct
+     * @param buf Buffer to store gain control mode
+     * @param len Length of buffer
+     * @return int EXIT_SUCCESS or EXIT_FAILURE
+     */
+    int adradio_get_rx_hardwaregainmode(adradio_t *dev, char *buf, size_t len);
     /**
      * @brief Get hardware gain
      * 
