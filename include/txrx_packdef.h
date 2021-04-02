@@ -59,7 +59,7 @@ typedef struct __attribute__((packed))
     uint16_t frame_crc2; // CRC of the frame, copy
 } modem_frame_header_t;  // 32 bytes long
 
-void fprint_frame_hdr(FILE *stream, modem_frame_header_t *hdr)
+static void fprint_frame_hdr(FILE *stream, modem_frame_header_t *hdr)
 {
     fprintf(stream, "GUID      : 0x%x\n", hdr->ident);
     fprintf(stream, "Pack ID   : 0x%llx\n", hdr->pack_id);
@@ -211,7 +211,7 @@ static const uint32_t crc32_tab[] = {
  * in sys/libkern.h, where it can be inlined.
  *
  */
-uint32_t crc32(const void *buf, size_t size)
+static inline uint32_t crc32(const void *buf, size_t size)
 {
     const uint8_t *p = (const uint8_t *)buf;
     uint32_t crc = ~0U;
