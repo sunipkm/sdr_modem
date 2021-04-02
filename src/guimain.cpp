@@ -241,11 +241,11 @@ void PhyWin(bool *active)
     {
         adradio_set_rx_samp(phy, MHZ(_samp_rx));
     }
-    if (ImGui::InputFloat("RX BW", &_bw_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("RX BW", &_bw_rx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         adradio_set_rx_bw(phy, MHZ(_bw_rx));
     }
-    if (ImGui::InputFloat("RX Power", &gain_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("RX Power", &gain_rx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         adradio_set_rx_hardwaregain(phy, gain_rx);
     }
