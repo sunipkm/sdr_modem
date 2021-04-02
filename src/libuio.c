@@ -35,9 +35,15 @@ int uio_get_id(const char *devname)
     {
         char fname[256];
         snprintf(fname, 256, "/sys/class/uio/uio%d/name", i);
+#ifdef UIO_DEBUG
+        eprintf("%s: File name: %s\n", __func__, fname);
+#endif
         FILE *fp = fopen(fname, "r");
         fseek(fp, 0L, SEEK_END);
         ssize_t sz = ftell(fp);
+#ifdef UIO_DEBUG
+        eprintf("%s: File size: %d\n", __func__, sz);
+#endif
         fseek(fp, 0L, SEEK_SET);
         memset(fname, 0x0, 256);
         if (fread(fname, 0x1, sz, fp) != sz)
@@ -46,6 +52,9 @@ int uio_get_id(const char *devname)
             continue;
         }
         fclose(fp);
+#ifdef UIO_DEBUG
+        eprintf("%s: File contents: %s\n", __func__, fname);
+#endif
         if (strncmp(fname, devname, sz) == 0)
         {
             ret = i;
