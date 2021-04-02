@@ -37,14 +37,16 @@ static pthread_mutex_t rx_write;
 
 static int rxmodem_fifo_rst()
 {
-    FILE *fp = fopen("/sys/class/gpio/export", "w");
+    FILE *fp;
+    ssize_t size;
+    fp = fopen("/sys/class/gpio/export", "w");
     if (fp == NULL)
     {
         eprintf("%s: Error opening ", __func__);
         perror("gpioexport: ");
         goto exitfunc;
     }
-    ssize_t size = fprintf(fp, "%s", RX_FIFO_RST);
+    size = fprintf(fp, "%s", RX_FIFO_RST);
     if (size <= 0)
     {
         eprintf("%s: Error writing to ", __func__);
@@ -60,7 +62,7 @@ static int rxmodem_fifo_rst()
         perror("gpiodirection: ");
         goto exitfunc;
     }
-    ssize_t size = fprintf(fp, "out");
+    size = fprintf(fp, "out");
     if (size <= 0)
     {
         eprintf("%s: Error writing to ", __func__);
@@ -76,7 +78,7 @@ static int rxmodem_fifo_rst()
         perror("gpiovalue: ");
         goto exitfunc;
     }
-    ssize_t size = fprintf(fp, "1");
+    size = fprintf(fp, "1");
     if (size <= 0)
     {
         eprintf("%s: Error writing to ", __func__);
@@ -92,7 +94,7 @@ static int rxmodem_fifo_rst()
         perror("gpiovalue: ");
         goto exitfunc;
     }
-    ssize_t size = fprintf(fp, "0");
+    size = fprintf(fp, "0");
     if (size <= 0)
     {
         eprintf("%s: Error writing to ", __func__);
