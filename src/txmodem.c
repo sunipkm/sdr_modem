@@ -84,11 +84,6 @@ int txmodem_write(txmodem *dev, uint8_t *buf, ssize_t size)
 #ifdef TXDEBUG
     eprintf("%s: Max Frames: %d | Frames: %d | Size: %ld\n", __func__, max_num_frames, num_frames, size);
 #endif
-    if (num_frames > max_num_frames)
-    {
-        eprintf("%s: Data size exceeds maximum allowed packet size, returning...\n", __func__);
-        return -1;
-    }
     pack_id++; // increment packet ID on each call
     ssize_t frame_ofst = 0;
     ssize_t data_ofst = 0;
@@ -148,23 +143,22 @@ int txmodem_write(txmodem *dev, uint8_t *buf, ssize_t size)
 #ifdef TXDEBUG
         eprintf("%s: Loop %d | Frame sz: %u, Frame ofst: %d, data ofst: %d, CRC: 0x%04x, wrote frame data\n", __func__, i, frame_hdr->frame_sz, frame_ofst, data_ofst, frame_hdr->frame_crc);
 #endif
-#ifdef TX_EVERY_FRAME
-        frame_ofst = 0;
-        adidma_write(dev->dma, 0x0, dma_frame_sz + sizeof(uint64_t), 0);
-        if ((num_frames > 5) && ((i % 4) == 0) && (i > 0))
-            usleep(1000);
-#endif
+        if (num_frames > 5)
+        {
+            frame_ofst = 0;
+            adidma_write(dev->dma, 0x0, dma_frame_sz + sizeof(uint64_t), 0);
+            if (((i % 4) == 0) && (i > 0))
+                usleep(1000);
+        }
     }
-#ifndef TX_EVERY_FRAME
 #ifdef TXDEBUG
     FILE *fp = fopen("out_tx.txt", "wb");
     fwrite(dev->dma->mem_virt_addr, 0x1, frame_ofst, fp);
     fclose(fp);
 #endif
-    return adidma_write(dev->dma, 0x0, frame_ofst, 0);
-#else
+    if (num_frames <= 5)
+        return adidma_write(dev->dma, 0x0, frame_ofst, 0);
     return 0;
-#endif
 }
 
 void txmodem_destroy(txmodem *dev)
@@ -332,72 +326,72 @@ int main(int argc, char *argv[])
                            "But I can hear it in my heart, vibrating strong as if she shouts\n"
                            "\n";
 
-        static char msg2[] = "Oh Ariadne, I am coming, I just need to work this maze inside my head\n"
-                             "I came here like you asked, I killed the beast, that part of me is dead\n"
-                             "Oh Ariadne, I just need to work this maze inside my head\n"
-                             "If only I'd have listened to you when you offered me that thread\n"
-                             "\n"
-                             "Everything is quiet and I'm not exactly sure\n"
-                             "If it really was your voice I heard or maybe it is a door\n"
-                             "That's closing up some hero's back on his track to be a man\n"
-                             "Can it be that all us heroes have a path, but not a plan?\n"
-                             "\n"
-                             "Oh Ariadne, I am coming, I just need to work this maze inside my mind\n"
-                             "I wish I had that string, it's so damn dark, I think I'm going blind\n"
-                             "Oh Ariadne, I just need to work this maze inside my mind\n"
-                             "For the life of me, I don't remember what I came to find\n"
-                             "\n"
-                             "Now tell me, princess, are you strolling through your sacred grove?\n"
-                             "And is the moon still shining? You're the only thing I'm thinking of\n"
-                             "The sword you gave me, it was heavy, I just had to lay it down\n"
-                             "It's funny how defenseless I can feel here when there's nobody around\n"
-                             "\n"
-                             "Oh Ariadne, I am coming, I just need to work this maze inside my heart\n"
-                             "I was blind, I thought you'd bind me, but you offered me a chart\n"
-                             "Oh Ariadne, I just need to work this maze inside my heart\n"
-                             "If I'd known that you could guide me, I'd have listened from the start\n"
-                             "\n"
-                             "Somewhere up there midnight strikes, I think I hear the fall\n"
-                             "Of little drops of water, magnified against the barren wall\n"
-                             "It's more a feeling than a substance, but there's nobody around\n"
-                             "And when I'm in here all alone, it's just enough to let me drown\n"
-                             "\n"
-                             "Oh Ariadne, I was coming, but I failed you in this labyrinth of my past\n"
-                             "Oh Ariadne, let me sing you and we'll make each other last\n"
-                             "Oh Ariadne, I have failed you in this labyrinth of my past\n"
-                             "Oh Ariadne, let me sing you and we'll make each other last"
-                             "\n\n\n"
-                             "Road trippin' with my two favorite allies\n"
-                             "Fully loaded we got snacks and supplies\n"
-                             "It's time to leave this town it's time to steal away\n"
-                             "Let's go get lost anywhere in the U.S.A.\n"
-                             "Let's go get lost, let's go get lost\n"
-                             "Blue you sit so pretty West of the one\n"
-                             "Sparkles light with yellow icing, just a mirror for the sun\n"
-                             "Just a mirror for the sun\n"
-                             "Just a mirror for the sun\n"
-                             "These smiling eyes are just a mirror for\n"
-                             "So much as come before those battles lost and won\n"
-                             "This life is shining more forever in the sun\n"
-                             "Now let us check our heads and let us check the surf\n"
-                             "Staying high and dry's More trouble than it's worth in the sun\n"
-                             "Just a mirror for the sun\n"
-                             "Just a mirror for the sun\n"
-                             "These smiling eyes are just a mirror for\n"
-                             "In Big Sur we take some time to linger on\n"
-                             "We three hunky dory's got our snake finger on\n"
-                             "Now let us drink the stars it's time to steal away\n"
-                             "Let's go get lost right here in the U.S.A\n"
-                             "Let's go get lost, let's go get lost\n"
-                             "Blue you sit so pretty west of the one\n"
-                             "Sparkles light with yellow icing, just a mirror for the sun\n"
-                             "Just a mirror for the sun\n"
-                             "Just a mirror for the sun\n"
-                             "These smiling eyes are just a mirror for\n"
-                             "These smiling eyes are just a mirror for\n"
-                             "Your smiling eyes are just a mirror for"
-                             "\n\n\n"
-                             "End of transmission";
+    static char msg2[] = "Oh Ariadne, I am coming, I just need to work this maze inside my head\n"
+                         "I came here like you asked, I killed the beast, that part of me is dead\n"
+                         "Oh Ariadne, I just need to work this maze inside my head\n"
+                         "If only I'd have listened to you when you offered me that thread\n"
+                         "\n"
+                         "Everything is quiet and I'm not exactly sure\n"
+                         "If it really was your voice I heard or maybe it is a door\n"
+                         "That's closing up some hero's back on his track to be a man\n"
+                         "Can it be that all us heroes have a path, but not a plan?\n"
+                         "\n"
+                         "Oh Ariadne, I am coming, I just need to work this maze inside my mind\n"
+                         "I wish I had that string, it's so damn dark, I think I'm going blind\n"
+                         "Oh Ariadne, I just need to work this maze inside my mind\n"
+                         "For the life of me, I don't remember what I came to find\n"
+                         "\n"
+                         "Now tell me, princess, are you strolling through your sacred grove?\n"
+                         "And is the moon still shining? You're the only thing I'm thinking of\n"
+                         "The sword you gave me, it was heavy, I just had to lay it down\n"
+                         "It's funny how defenseless I can feel here when there's nobody around\n"
+                         "\n"
+                         "Oh Ariadne, I am coming, I just need to work this maze inside my heart\n"
+                         "I was blind, I thought you'd bind me, but you offered me a chart\n"
+                         "Oh Ariadne, I just need to work this maze inside my heart\n"
+                         "If I'd known that you could guide me, I'd have listened from the start\n"
+                         "\n"
+                         "Somewhere up there midnight strikes, I think I hear the fall\n"
+                         "Of little drops of water, magnified against the barren wall\n"
+                         "It's more a feeling than a substance, but there's nobody around\n"
+                         "And when I'm in here all alone, it's just enough to let me drown\n"
+                         "\n"
+                         "Oh Ariadne, I was coming, but I failed you in this labyrinth of my past\n"
+                         "Oh Ariadne, let me sing you and we'll make each other last\n"
+                         "Oh Ariadne, I have failed you in this labyrinth of my past\n"
+                         "Oh Ariadne, let me sing you and we'll make each other last"
+                         "\n\n\n"
+                         "Road trippin' with my two favorite allies\n"
+                         "Fully loaded we got snacks and supplies\n"
+                         "It's time to leave this town it's time to steal away\n"
+                         "Let's go get lost anywhere in the U.S.A.\n"
+                         "Let's go get lost, let's go get lost\n"
+                         "Blue you sit so pretty West of the one\n"
+                         "Sparkles light with yellow icing, just a mirror for the sun\n"
+                         "Just a mirror for the sun\n"
+                         "Just a mirror for the sun\n"
+                         "These smiling eyes are just a mirror for\n"
+                         "So much as come before those battles lost and won\n"
+                         "This life is shining more forever in the sun\n"
+                         "Now let us check our heads and let us check the surf\n"
+                         "Staying high and dry's More trouble than it's worth in the sun\n"
+                         "Just a mirror for the sun\n"
+                         "Just a mirror for the sun\n"
+                         "These smiling eyes are just a mirror for\n"
+                         "In Big Sur we take some time to linger on\n"
+                         "We three hunky dory's got our snake finger on\n"
+                         "Now let us drink the stars it's time to steal away\n"
+                         "Let's go get lost right here in the U.S.A\n"
+                         "Let's go get lost, let's go get lost\n"
+                         "Blue you sit so pretty west of the one\n"
+                         "Sparkles light with yellow icing, just a mirror for the sun\n"
+                         "Just a mirror for the sun\n"
+                         "Just a mirror for the sun\n"
+                         "These smiling eyes are just a mirror for\n"
+                         "These smiling eyes are just a mirror for\n"
+                         "Your smiling eyes are just a mirror for"
+                         "\n\n\n"
+                         "End of transmission";
 
     ssize_t size = snprintf(msg, (1 << 16) - 1, fmt_str, timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
     memcpy(msg + size, msg2, strlen(msg2));
