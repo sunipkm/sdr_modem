@@ -482,12 +482,12 @@ ssize_t rxmodem_read(rxmodem *dev, uint8_t *buf, ssize_t size)
         }
         total_read += frame_hdr->frame_sz;
     }
-    dev->frame_num = 0;
     return valid_read;
 }
 
 int rxmodem_reset(rxmodem *dev, rxmodem_conf_t *conf)
 {
+    dev->frame_num = 0;
     uio_write(dev->bus, RXMODEM_RESET, 0x1);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
