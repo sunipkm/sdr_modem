@@ -219,6 +219,16 @@ int adradio_ensm_mode(adradio_t *dev, enum ensm_mode mode)
     return iio_device_attr_write(dev->ad_phy, "ensm_mode", ensm_mode_str[mode]);
 }
 
+int adradio_enable_fir(adradio_t *dev, bool cond)
+{
+    return iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", cond);
+}
+
+int adradio_check_fir(adradio_t *dev, bool *cond)
+{
+    return iio_channel_attr_read_bool(dev->rx_iq, "filter_fir_en", cond);
+}
+
 int adradio_load_fir(adradio_t *dev, const char *fname)
 {
     int ret;
