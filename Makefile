@@ -84,9 +84,7 @@ $(LIBTARGET): imgui
 .PHONY: clean
 
 clean:
-	$(RM) $(GUITARGET)
-	$(RM) $(RXTARGET)
-	$(RM) $(TXTARGET)
+	$(RM) *.out
 	$(RM) $(COBJS)
 	$(RM) $(RXOBJS)
 	$(RM) $(TXOBJS)
