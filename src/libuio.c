@@ -56,7 +56,7 @@ int uio_get_id(const char *devname)
 #ifdef UIO_DEBUG
         eprintf("%s: File contents: %s\n", __func__, fname);
 #endif
-        if (strncmp(fname, devname, sz) == 0)
+        if (strncmp(fname, devname, strlen(fname)) == 0)
         {
             ret = i;
             break;
