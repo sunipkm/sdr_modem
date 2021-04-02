@@ -155,21 +155,21 @@ void PhyWin(bool *active)
     static char *gainmodestr[] = {"slow_attack", "fast_attack"};
     static char *phymodestr[] = {"Sleep", "FDD", "TDD"};
     static char ftr_fname[256];
-    static char ensm_mode[20];
+    static char ensmmode[256];
     enum ensm_mode phymode;
     char curgainmode[32];
-    adradio_get_ensm_mode(phy, ensm_mode, 20);
-    if (strncmp(ensm_mode, "fdd", 20) == 0)
+    adradio_get_ensm_mode(phy, ensmmode, 256);
+    if (strncmp(ensmmode, "fdd", 20) == 0)
         phymode = FDD;
-    else if (strncmp(ensm_mode, "sleep", 20) == 0)
+    else if (strncmp(ensmmode, "sleep", 20) == 0)
         phymode = SLEEP;
-    else if (strncmp(ensm_mode, "tdd", 20) == 0)
+    else if (strncmp(ensmmode, "tdd", 20) == 0)
         phymode = TDD;
     adradio_get_rx_hardwaregainmode(phy, curgainmode, IM_ARRAYSIZE(curgainmode));
     adradio_get_temp(phy, &temp);
     adradio_get_rssi(phy, &rssi);
     ImGui::Columns(4, "phy_sensors", true);
-    ImGui::Text("System Mode: %s", ensm_mode);
+    ImGui::Text("System Mode: %s", ensmmode);
     ImGui::NextColumn();
     ImGui::Text("Temperature: %.3f °C", temp * 0.001);
     ImGui::NextColumn();
