@@ -248,6 +248,7 @@ int adradio_load_fir(adradio_t *dev, const char *fname)
     ssize_t fsize = 0;
     fseek(fp, 0L, SEEK_END);
     fsize = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
     if (fsize <= 0)
     {
         eprintf("%s: Invalid size %ld for file %s, could not load FIR config\n", __func__, fsize, fname);

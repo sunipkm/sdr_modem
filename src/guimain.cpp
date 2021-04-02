@@ -37,9 +37,9 @@ static void glfw_error_callback(int error, const char *description)
 #include <signal.h>
 #include <errno.h>
 
-#define eprintf(...) \
+#define eprintf(...)              \
     fprintf(stderr, __VA_ARGS__); \
-    fflush(stderr) 
+    fflush(stderr)
 
 // #include <openssl/md5.h>
 
@@ -153,6 +153,7 @@ void PhyWin(bool *active)
     static float gain_tx;
     static int gainmode;
     static char *gainmodestr[] = {"slow_attack", "fast_attack"};
+    static char ftr_fname[256];
     char curgainmode[32];
     adradio_get_rx_hardwaregainmode(phy, curgainmode, IM_ARRAYSIZE(curgainmode));
     adradio_get_temp(phy, &temp);
@@ -163,7 +164,7 @@ void PhyWin(bool *active)
     ImGui::Text("RSSI: %.2lf dB", rssi);
     ImGui::NextColumn();
     ImGui::Text("Gain Control Mode: %s", curgainmode);
-    
+
     ImGui::Columns(5, "phy_outputs", true);
     ImGui::Text(" ");
     ImGui::NextColumn();
@@ -186,6 +187,7 @@ void PhyWin(bool *active)
         _bw_tx = bw * 1e-6;
         _samp_tx = samp * 1e-6;
         gain_tx = gain;
+        snprintf(ftr_fname, 256, "Enter Filter File Name");
     }
     ImGui::Text("TX:");
     ImGui::NextColumn();
@@ -259,6 +261,21 @@ void PhyWin(bool *active)
     if (ImGui::Combo("RX Gain Control Mode", (int *)&gainmode, gainmodestr, IM_ARRAYSIZE(gainmodestr)))
     {
         adradio_set_rx_hardwaregainmode(phy, (enum gain_mode)(gainmode + 1));
+    }
+    ImGui::Separator();
+    if (ImGui::InputText("Filter File", ftr_fname, IM_ARRAYSIZE(ftr_fname), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        char buf[256];
+        memcpy(buf, ftr_fname, 255);
+        buf[255] = '\0';
+        if (access(ftr_fname, F_OK | R_OK))
+        {
+            snprintf(ftr_fname, IM_ARRAYSIZE(ftr_fname), "Invalid file %s", buf);
+        }
+        else if (adradio_load_fir(phy, ftr_fname) == EXIT_FAILURE)
+        {
+            snprintf(ftr_fname, IM_ARRAYSIZE(ftr_fname), "Could not load %s", buf);
+        }
     }
     ImGui::Separator();
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
