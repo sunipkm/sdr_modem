@@ -182,9 +182,19 @@ int adradio_get_tx_hardwaregain(adradio_t *dev, double *gain)
     return iio_channel_attr_read_double(dev->tx_iq, "hardwaregain", gain);
 }
 
-int adradio_set_rx_hardwaregain(adradio_t *dev, double gain)
+int adradio_set_rx_hardwaregainmode(adradio_t *dev, enum gain_mode mode)
 {
-    return iio_channel_attr_write_double(dev->rx_iq, "hardwaregain", gain);
+    static char *gainmodes[] = {"slow_attack", "slow_attack", "fast_attack"};
+    if (mode > FAST_ATTACK)
+        return EXIT_FAILURE;
+    return iio_channel_attr_write_raw(dev->rx_iq, "gain_control_mode", gainmodes[mode], strlen(gainmodes[mode]));
+}
+
+int adradio_get_rx_hardwaregainmode(adradio_t *dev, char *buf, size_t len)
+{
+    if (buf == NULL)
+        return EXIT_FAILURE;
+    return iio_channel_attr_read(dev->rx_iq, "gain_control_mode", buf, len);
 }
 
 int adradio_get_rx_hardwaregain(adradio_t *dev, double *gain)

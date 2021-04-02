@@ -29,8 +29,8 @@ static void glfw_error_callback(int error, const char *description)
 }
 
 #include "libiio.h"
-#include "rxmodem.h"
-#include "txmodem.h"
+// #include "rxmodem.h"
+// #include "txmodem.h"
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
@@ -71,73 +71,73 @@ void sighandler(int sig)
 //     MD5_Final(md5digest, &c);
 // }
 
-typedef struct
-{
-    ssize_t len;
-    char *buf;
-    pthread_mutex_t lock[1];
-} txt_buf;
+// typedef struct
+// {
+//     ssize_t len;
+//     char *buf;
+//     pthread_mutex_t lock[1];
+// } txt_buf;
 
-pthread_t rxthread;
-pthread_mutex_t rxthread_wake_m[1];
-pthread_cond_t rxthread_wake[1];
-bool rxthread_rcv_file = false;
-char rxthread_rcv_fname[256];
-pthread_mutex_t rcv_file[1];
-txt_buf rcv_txt[1];
+// pthread_t rxthread;
+// pthread_mutex_t rxthread_wake_m[1];
+// pthread_cond_t rxthread_wake[1];
+// bool rxthread_rcv_file = false;
+// char rxthread_rcv_fname[256];
+// pthread_mutex_t rcv_file[1];
+// txt_buf rcv_txt[1];
 
-pthread_t txthread;
-pthread_mutex_t txthread_wake_m[1];
-pthread_cond_t txthread_wake[1];
-bool txthread_send_file = false;
-char txthread_send_fname[256];
-txt_buf send_txt[1];
+// pthread_t txthread;
+// pthread_mutex_t txthread_wake_m[1];
+// pthread_cond_t txthread_wake[1];
+// bool txthread_send_file = false;
+// char txthread_send_fname[256];
+// txt_buf send_txt[1];
 
-void *rxthread_fcn(void *tid)
-{
-    rxmodem dev[1];
-    if (rxmodem_init(dev, 0, 2) < 0)
-    {
-        printf("error initializing RX device\n");
-        return NULL;
-    }
-    memset(rcv_txt, 0x0, sizeof(rcv_txt));
-    pthread_mutex_init(rcv_txt->lock, NULL);
-    rxmodem_reset(dev, dev->conf);
-    while (!done)
-    {
-        pthread_cond_wait(rxthread_wake, rxthread_wake_m);
-        ssize_t rcv_sz = rxmodem_receive(dev);
-        if (rcv_sz < 0)
-        {
-            eprintf("%s: Receive size = %d\n", __func__, rcv_sz);
-            continue;
-        }
-        printf("%s: Received data size: %d\n", __func__, rcv_sz);
-        fflush(stdout);
-        if (!rxthread_rcv_file)
-        {
-            pthread_mutex_lock(rcv_txt->lock);
-            if (rcv_txt->buf != NULL)
-            {
-                free(rcv_txt->buf);
-                rcv_txt->len = 0;
-            }
-            rcv_txt->buf = (char *)malloc(rcv_sz);
-            rcv_txt->len = rcv_sz;
-            ssize_t rd_sz = rxmodem_read(dev, (uint8_t *)(rcv_txt->buf), rcv_txt->len);
-            pthread_mutex_unlock(rcv_txt->lock);
-            if (rcv_sz != rd_sz)
-            {
-                eprintf("%s: Read size = %d out of %d\n", __func__, rd_sz, rcv_sz);
-            }
-        }
-        else
-        {
+// void *rxthread_fcn(void *tid)
+// {
+//     rxmodem dev[1];
+//     if (rxmodem_init(dev, 0, 2) < 0)
+//     {
+//         printf("error initializing RX device\n");
+//         return NULL;
+//     }
+//     memset(rcv_txt, 0x0, sizeof(rcv_txt));
+//     pthread_mutex_init(rcv_txt->lock, NULL);
+//     rxmodem_reset(dev, dev->conf);
+//     while (!done)
+//     {
+//         pthread_cond_wait(rxthread_wake, rxthread_wake_m);
+//         ssize_t rcv_sz = rxmodem_receive(dev);
+//         if (rcv_sz < 0)
+//         {
+//             eprintf("%s: Receive size = %d\n", __func__, rcv_sz);
+//             continue;
+//         }
+//         printf("%s: Received data size: %d\n", __func__, rcv_sz);
+//         fflush(stdout);
+//         if (!rxthread_rcv_file)
+//         {
+//             pthread_mutex_lock(rcv_txt->lock);
+//             if (rcv_txt->buf != NULL)
+//             {
+//                 free(rcv_txt->buf);
+//                 rcv_txt->len = 0;
+//             }
+//             rcv_txt->buf = (char *)malloc(rcv_sz);
+//             rcv_txt->len = rcv_sz;
+//             ssize_t rd_sz = rxmodem_read(dev, (uint8_t *)(rcv_txt->buf), rcv_txt->len);
+//             pthread_mutex_unlock(rcv_txt->lock);
+//             if (rcv_sz != rd_sz)
+//             {
+//                 eprintf("%s: Read size = %d out of %d\n", __func__, rd_sz, rcv_sz);
+//             }
+//         }
+//         else
+//         {
 
-        }
-    }
-}
+//         }
+//     }
+// }
 
 adradio_t phy[1];
 
@@ -150,13 +150,19 @@ void PhyWin(bool *active)
     static float _lo_rx, _bw_rx, _samp_rx;
     static float _lo_tx, _bw_tx, _samp_tx;
     static double rssi, gain;
-    static float gain_rx, gain_tx;
+    static float gain_tx;
+    static enum gain_mode gainmode;
+    static char *gainmodestr[] = {"Undefined", "slow_attack", "fast_attack"};
+    char curgainmode[32];
+    adradio_get_rx_hardwaregainmode(phy, curgainmode, IM_ARRAYSIZE(curgainmode));
     adradio_get_temp(phy, &temp);
     adradio_get_rssi(phy, &rssi);
-    ImGui::Columns(2, "phy_sensors", true);
+    ImGui::Columns(3, "phy_sensors", true);
     ImGui::Text("AD9361 Temperature: %.3f °C", temp * 0.001);
     ImGui::NextColumn();
     ImGui::Text("AD9361 RSSI: %.2lf dB", rssi);
+    ImGui::NextColumn();
+    ImGui::Text("AD9361 Gain Control Mode: %s", curgainmode);
     
     ImGui::Columns(5, "phy_outputs", true);
     ImGui::Text(" ");
@@ -201,7 +207,12 @@ void PhyWin(bool *active)
         _lo_rx = lo * 1e-9;
         _bw_rx = bw * 1e-6;
         _samp_rx = samp * 1e-6;
-        gain_rx = gain;
+        if (strncmp(curgainmode, gainmodestr[SLOW_ATTACK], strlen(gainmodestr[SLOW_ATTACK])) == 0)
+            gainmode = SLOW_ATTACK;
+        else if (strncmp(curgainmode, gainmodestr[FAST_ATTACK], strlen(gainmodestr[FAST_ATTACK])) == 0)
+            gainmode = FAST_ATTACK;
+        else
+            gainmode = SLOW_ATTACK;
         firstrun = false;
     }
     ImGui::Text("RX:");
@@ -216,38 +227,38 @@ void PhyWin(bool *active)
 
     ImGui::Columns(1);
     ImGui::Text("Set Outputs: ");
-    if (ImGui::InputFloat("TX LO (GHz)", &_lo_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("TX LO (MHz)", &_lo_tx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        adradio_set_tx_lo(phy, GHZ(_lo_tx));
+        adradio_set_tx_lo(phy, MHZ(_lo_tx));
     }
-    if (ImGui::InputFloat("TX Samp (MHz)", &_samp_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("TX Samp (MHz)", &_samp_tx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         adradio_set_tx_samp(phy, MHZ(_samp_tx));
     }
-    if (ImGui::InputFloat("TX BW", &_bw_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("TX BW", &_bw_tx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         adradio_set_tx_bw(phy, MHZ(_bw_tx));
     }
-    if (ImGui::InputFloat("TX Power", &gain_tx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("TX Power (dBm)", &gain_tx, 0, 0, "%.1f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         adradio_set_tx_hardwaregain(phy, gain_tx);
     }
 
-    if (ImGui::InputFloat("RX LO", &_lo_rx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("RX LO (MHz)", &_lo_rx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        adradio_set_rx_lo(phy, GHZ(_lo_rx));
+        adradio_set_rx_lo(phy, MHZ(_lo_rx));
     }
-    if (ImGui::InputFloat("RX Samp", &_samp_rx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("RX Samp (MHz)", &_samp_rx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         adradio_set_rx_samp(phy, MHZ(_samp_rx));
     }
-    if (ImGui::InputFloat("RX BW", &_bw_rx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("RX BW (MHz)", &_bw_rx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         adradio_set_rx_bw(phy, MHZ(_bw_rx));
     }
-    if (ImGui::InputFloat("RX Power", &gain_rx, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::Combo("RX Gain Control Mode", (int *)&gainmode, gainmodestr, IM_ARRAYSIZE(gainmodestr)))
     {
-        adradio_set_rx_hardwaregain(phy, gain_rx);
+        adradio_set_rx_hardwaregainmode(phy, gainmode);
     }
 
     ImGui::End();
