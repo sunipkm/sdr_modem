@@ -31,6 +31,9 @@ int uio_get_id(const char *devname)
         eprintf("%s: Device name error, returning...\n", __func__);
         return ret;
     }
+#ifdef UIO_DEBUG
+        eprintf("%s: Check name: %s\n", __func__, devname);
+#endif
     for (int i = 0; i < UIO_MAX_DEVICE_ID; i++)
     {
         char fname[256];
