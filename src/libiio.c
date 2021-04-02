@@ -415,7 +415,7 @@ int main()
         adradio_get_rx_lo(dev, &lo_freq);
         adradio_get_rx_samp(dev, &samp);
         adradio_get_rx_bw(dev, &bw);
-        adradio_get_tx_hardwaregain(dev, &gain);
+        adradio_get_rx_hardwaregain(dev, &gain);
         uint64_t start, end;
         start = get_nsec();
         adradio_get_rssi(dev, &rssi);
