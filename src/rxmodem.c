@@ -31,6 +31,7 @@ static void *rx_irq_thread(void *__dev);
 static pthread_cond_t rx_rcv;
 static pthread_mutex_t rx_rcv_m;
 static pthread_mutex_t rx_write;
+static pthread_mutex_t frame_ofst_m;
 
 #define RX_FIFO_RST "960"
 #define RX_FIFO_RST_TOUT 100000 // us
@@ -224,9 +225,10 @@ static void *rx_irq_thread(void *__dev)
             dev->retcode = RX_FRAME_INVALID;
             goto rx_irq_thread_exit;
         }
+        pthread_mutex_lock(&frame_ofst_m);
         if (frame_num == 0)
             dev->frame_ofst = (ssize_t *)malloc(sizeof(ssize_t));
-        else
+        else if (dev->frame_ofst != NULL)
         {
 #ifdef RXDEBUG
             eprintf("%s: Realloc: Source %p, size = %u | ", __func__, dev->frame_ofst, frame_num);
@@ -247,6 +249,7 @@ static void *rx_irq_thread(void *__dev)
             goto rx_irq_thread_exit;
         }
         (dev->frame_ofst)[frame_num] = ofst;
+        pthread_mutex_unlock(&frame_ofst_m);
 #ifdef RXDEBUG
         eprintf("%s: %d\n", __func__, __LINE__);
 #endif
@@ -277,7 +280,7 @@ rx_irq_thread_exit:
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
     rxmodem_stop(dev);
-    dev->retcode = retcode;
+    // dev->retcode = retcode;
     return NULL;
 }
 
@@ -469,7 +472,10 @@ ssize_t rxmodem_read(rxmodem *dev, uint8_t *buf, ssize_t size)
         }
         total_read += frame_hdr->frame_sz;
     }
+    pthread_mutex_lock(&frame_ofst_m);
     free(dev->frame_ofst);
+    dev->frame_ofst = NULL;
+    pthread_mutex_unlock(&frame_ofst_m);
     dev->frame_num = 0;
     return valid_read;
 }
