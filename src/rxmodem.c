@@ -107,6 +107,18 @@ static void *rx_irq_thread(void *__dev)
     gpioWrite(RX_FIFO_RST, GPIO_HIGH);
     usleep(100000); // 100 ms to clear FIFO
     gpioWrite(RX_FIFO_RST, GPIO_LOW);
+    usleep(100000); // 100 ms to clear FIFO
+    gpioWrite(RX_FIFO_RST, GPIO_HIGH);
+    usleep(100000); // 100 ms to clear FIFO
+    gpioWrite(RX_FIFO_RST, GPIO_LOW);
+    usleep(100000); // 100 ms to clear FIFO
+    gpioWrite(RX_FIFO_RST, GPIO_HIGH);
+    usleep(100000); // 100 ms to clear FIFO
+    gpioWrite(RX_FIFO_RST, GPIO_LOW);
+    usleep(100000); // 100 ms to clear FIFO
+    gpioWrite(RX_FIFO_RST, GPIO_HIGH);
+    usleep(100000); // 100 ms to clear FIFO
+    gpioWrite(RX_FIFO_RST, GPIO_LOW);
     // set up for the first interrupt
     if ((dev->retcode = rxmodem_start(dev)) < 0)
     {
@@ -182,6 +194,8 @@ static void *rx_irq_thread(void *__dev)
 #ifdef RXDEBUG
         eprintf("%s: Frame number: %d, loop ID: %d\n", __func__, frame_num, loop_id++);
 #endif
+        if (dev->rx_done)
+            break;
         dev->retcode = adidma_read(dev->dma, ofst, frame_sz + frame_num - 1 + sizeof(uint32_t));
 #ifdef RXDEBUG
         eprintf("%s: %d\n", __func__, __LINE__);
@@ -359,7 +373,7 @@ ssize_t rxmodem_receive(rxmodem *dev)
     }
     retcode = frame_hdr->pack_sz; // on success or timeout, send the proper size
 rxmodem_receive_end:
-    // pthread_join(dev->thr[0], NULL);
+    dev->rx_done = 1; // indicate completion
     return retcode;
 }
 
