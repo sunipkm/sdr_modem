@@ -1,6 +1,3 @@
-[submodule "drivers/gpiodev"]
-	path = drivers/gpiodev
-	url = git@github.com:SPACE-HAUC/gpiodev.git
 [submodule "imgui"]
 	path = imgui
 	url = git@github.com:sunipkmukherjee/imgui.git
