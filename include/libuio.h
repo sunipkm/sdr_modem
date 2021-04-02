@@ -38,6 +38,17 @@ typedef struct
     struct pollfd *pfd; /// Poll file descriptor for the UIO device
 } uio_dev;
 /**
+ * @brief Maximum device ID search space for uio_get_id
+ */
+#define UIO_MAX_DEVICE_ID 0x20
+/**
+ * @brief Get ID of the UIO device using device name
+ * 
+ * @param devname Name of the UIO device
+ * @return int Positive on valid ID, negative on error
+ */
+int uio_get_id(const char *devname);
+/**
  * @brief Initialize a UIO device with given ID
  * 
  * @param dev uio_dev descriptor for the UIO device. Memory of this struct

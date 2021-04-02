@@ -19,6 +19,42 @@
 #include <poll.h>
 #include <libuio.h>
 
+#define eprintf(...) \
+    fprintf(stderr, __VA_ARGS__); \
+    fflush(stdout)
+
+int uio_get_id(const char *devname)
+{
+    int ret = -1;
+    if (devname == NULL)
+    {
+        eprintf("%s: Device name error, returning...\n", __func__);
+        return ret;
+    }
+    for (int i = 0; i < UIO_MAX_DEVICE_ID; i++)
+    {
+        char fname[256];
+        snprintf(fname, 256, "/sys/class/uio/uio%d/name", i);
+        FILE *fp = fopen(fname, "r");
+        fseek(fp, 0L, SEEK_END);
+        ssize_t sz = ftell(fp);
+        fseek(fp, 0L, SEEK_SET);
+        memset(fname, 0x0, 256);
+        if (fread(fname, 0x1, sz, fp) != sz)
+        {
+            fclose(fp);
+            continue;
+        }
+        fclose(fp);
+        if (strncmp(fname, devname, sz) == 0)
+        {
+            ret = i;
+            break;
+        }
+    }
+    return ret;
+}
+
 int uio_init(uio_dev *dev, int uio_id)
 {
 #ifdef UIO_DEBUG
