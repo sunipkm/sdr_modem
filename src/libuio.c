@@ -39,14 +39,12 @@ int uio_get_id(const char *devname)
         eprintf("%s: File name: %s\n", __func__, fname);
 #endif
         FILE *fp = fopen(fname, "r");
-        fseek(fp, 0L, SEEK_END);
-        ssize_t sz = ftell(fp);
-#ifdef UIO_DEBUG
-        eprintf("%s: File size: %d\n", __func__, sz);
-#endif
-        fseek(fp, 0L, SEEK_SET);
         memset(fname, 0x0, 256);
-        if (fread(fname, 0x1, sz, fp) != sz)
+        ssize_t sz = fscanf(fp, "%s", fname);
+#ifdef UIO_DEBUG
+        eprintf("%s: Read size: %d\n", __func__, sz);
+#endif        
+        if (sz <= 0)
         {
             fclose(fp);
             continue;
