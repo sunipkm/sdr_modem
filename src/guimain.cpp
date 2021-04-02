@@ -269,11 +269,17 @@ int main(int, char **)
 {
     if (adradio_init(phy) != EXIT_SUCCESS)
         return 0;
+    char hostname[256];
+    char progname[256];
+    if (!gethostname(hostname, 256))
+        snprintf(progname, 256, "AD9361 Configuration Utility");
+    else
+        snprintf(progname, 256, "AD9361 Configuration Utility @%s", hostname);
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         return 1;
-    GLFWwindow *window = glfwCreateWindow(1280, 720, "AD9361 Configuration Utility", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(1280, 720, progname, NULL, NULL);
     if (window == NULL)
         return 1;
     glfwMakeContextCurrent(window);
