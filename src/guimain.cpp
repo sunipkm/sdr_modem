@@ -287,6 +287,11 @@ void PhyWin(bool *active)
     {
         adradio_enable_fir(phy, RX, rx_ftr_en);
     }
+    ImGui::SameLine();
+    if (ImGui::Button("Reload DDS Config"))
+    {
+        adradio_reconfigure_dds(phy);
+    }
     if (ImGui::InputText("Filter File", ftr_fname, IM_ARRAYSIZE(ftr_fname), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         char buf[256];
