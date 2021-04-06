@@ -128,7 +128,7 @@ void ChatWin(bool *active)
     ImGui::Text("Received: %s", rx_buf);
     pthread_mutex_unlock(rx_buf_access);
 
-    ImGui::InputText("To Send", buf, strlen(buf), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
+    ImGui::InputText("To Send", buf, 512, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
     if (ImGui::Button("Transmit"))
     {
         time_t rawtime;
