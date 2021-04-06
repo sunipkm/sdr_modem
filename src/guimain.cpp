@@ -56,7 +56,7 @@ bool show_chat_win = false;
 
 #define RX_BUF_SIZE 8192
 char rx_buf[RX_BUF_SIZE];
-ssize_t rx_buf_sz = 0;
+ssize_t rx_buf_sz = 1;
 pthread_mutex_t rx_buf_access[1];
 
 void *rx_thread_fcn(void *tid)
@@ -128,7 +128,7 @@ void ChatWin(bool *active)
     ImGui::InputText("Received:", rx_buf, rx_buf_sz, ImGuiInputTextFlags_ReadOnly);
     pthread_mutex_unlock(rx_buf_access);
 
-    if (ImGui::InputText("Send:", buf, strlen(buf), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputText("Send >", buf, strlen(buf), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         time_t rawtime;
         struct tm *timeinfo;
