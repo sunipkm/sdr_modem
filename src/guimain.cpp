@@ -125,10 +125,10 @@ void ChatWin(bool *active)
     }
     ImGui::Begin(chatwindowname, active);
     pthread_mutex_lock(rx_buf_access);
-    ImGui::InputText("Received:", rx_buf, rx_buf_sz, ImGuiInputTextFlags_ReadOnly);
+    ImGui::Text("Received: %s", rx_buf);
     pthread_mutex_unlock(rx_buf_access);
 
-    if (ImGui::InputText("Send >", buf, strlen(buf), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputText("> Send", buf, strlen(buf), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         time_t rawtime;
         struct tm *timeinfo;
@@ -137,6 +137,10 @@ void ChatWin(bool *active)
         ssize_t sz = snprintf(tx_buf, TX_BUF_SIZE, "%s (%04d-%02d-%02d %02d:%02d:%02d) > %s", hostname, timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec, buf);
         sz++;
         txmodem_write(txdev, (uint8_t *)tx_buf, sz);
+        if (strlen(buf) < 2)
+        {
+            snprintf(buf, 4000, "Testing...");
+        }
     }
     ImGui::End();
 }
