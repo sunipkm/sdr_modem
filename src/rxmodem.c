@@ -528,8 +528,8 @@ int rxmodem_reset(rxmodem *dev, rxmodem_conf_t *conf)
 
 void rxmodem_destroy(rxmodem *dev)
 {
-    pthread_mutex_lock(&rx_irq_thread_running);
-    pthread_mutex_unlock(&rx_irq_thread_running);
+    // pthread_mutex_lock(&rx_irq_thread_running);
+    // pthread_mutex_unlock(&rx_irq_thread_running);
     if (dev->frame_ofst != NULL)
         free(dev->frame_ofst);
     rxmodem_stop(dev);                       // stop the modem for safety
