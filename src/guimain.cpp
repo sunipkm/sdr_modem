@@ -367,8 +367,8 @@ int main(int, char **)
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         return 1;
-    ImVec2 mainwinsize = {712, 800};
-    GLFWwindow *window = glfwCreateWindow((int)mainwinsize.x, (int)mainwinsize.y, progname, NULL, NULL);
+    ImVec2 mainwinsize = {712, 400};
+    GLFWwindow *window = glfwCreateWindow((int)mainwinsize.x, (int)mainwinsize.y * 2, progname, NULL, NULL);
     if (window == NULL)
         return 1;
     glfwMakeContextCurrent(window);
