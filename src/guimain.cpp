@@ -52,7 +52,7 @@ void sighandler(int sig)
 static char hostname[256];
 static bool isGround = false;
 
-bool show_chat_win = false;
+/* bool show_chat_win = false;
 
 #define RX_BUF_SIZE 8192
 char rx_buf[RX_BUF_SIZE];
@@ -150,7 +150,7 @@ void ChatWin(bool *active)
         ImGui::Text("Last transmitted at: %04d-%02d-%02d %02d:%02d:%02d", timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
     }
     ImGui::End();
-}
+} */
 
 adradio_t phy[1];
 
@@ -337,8 +337,8 @@ void PhyWin(bool *active)
     {
         adradio_set_ensm_mode(phy, phymode);
     }
-    ImGui::Checkbox("Chat Window", &show_chat_win);
-    ImGui::SameLine();
+    // ImGui::Checkbox("Chat Window", &show_chat_win);
+    // ImGui::SameLine();
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::End();
 }
@@ -357,21 +357,21 @@ int main(int, char **)
     if (strncasecmp("adrv9361", hostname, strlen("adrv9361")) == 0)
         isGround = true;
     // Set up TX modem
-    if (txmodem_init(txdev, uio_get_id("tx_ipcore"), uio_get_id("tx_dma")) < 0)
-    {
-        eprintf("Could not initialize TX modem\n");
-        adradio_destroy(phy);
-        return 2;
-    }
-    // Set up RX modem
-    pthread_t rxthread;
-    if (pthread_create(&rxthread, NULL, &rx_thread_fcn, NULL) != 0)
-    {
-        eprintf("Could not initialize RX thread\n");
-        txmodem_destroy(txdev);
-        adradio_destroy(phy);
-        return 3;
-    }
+    // if (txmodem_init(txdev, uio_get_id("tx_ipcore"), uio_get_id("tx_dma")) < 0)
+    // {
+    //     eprintf("Could not initialize TX modem\n");
+    //     adradio_destroy(phy);
+    //     return 2;
+    // }
+    // // Set up RX modem
+    // pthread_t rxthread;
+    // if (pthread_create(&rxthread, NULL, &rx_thread_fcn, NULL) != 0)
+    // {
+    //     eprintf("Could not initialize RX thread\n");
+    //     txmodem_destroy(txdev);
+    //     adradio_destroy(phy);
+    //     return 3;
+    // }
     // register signal handler
     signal(SIGINT, &sighandler);
     // Setup window
@@ -379,7 +379,7 @@ int main(int, char **)
     if (!glfwInit())
         return 1;
     ImVec2 mainwinsize = {712, 400};
-    GLFWwindow *window = glfwCreateWindow((int)mainwinsize.x, (int)mainwinsize.y * 2, progname, NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow((int)mainwinsize.x, (int)mainwinsize.y, progname, NULL, NULL);
     if (window == NULL)
         return 1;
     glfwMakeContextCurrent(window);
@@ -439,12 +439,12 @@ int main(int, char **)
         ImGui::SetNextWindowSize(mainwinsize);
         PhyWin(&show_phy_win);
 
-        if (show_chat_win)
-        {
-            ImGui::SetNextWindowPos(ImVec2(0, 400));
-            ImGui::SetNextWindowSize(mainwinsize);
-            ChatWin(&show_chat_win);
-        }
+        // if (show_chat_win)
+        // {
+        //     ImGui::SetNextWindowPos(ImVec2(0, 400));
+        //     ImGui::SetNextWindowSize(mainwinsize);
+        //     ChatWin(&show_chat_win);
+        // }
 
         // Rendering
         ImGui::Render();
@@ -474,11 +474,11 @@ int main(int, char **)
     glfwDestroyWindow(window);
     glfwTerminate();
 
-    show_chat_win = false;
-    done = 1;
+    // show_chat_win = false;
+    // done = 1;
 
-    pthread_join(rxthread, NULL);
-    txmodem_destroy(txdev);
+    // pthread_join(rxthread, NULL);
+    // txmodem_destroy(txdev);
     adradio_destroy(phy);
     return 0;
 }

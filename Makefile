@@ -15,9 +15,9 @@ endif
 
 UNAME_S := $(shell uname -s)
 
-EDCFLAGS+= -I include/ -I drivers/ -I ./ -Wall -O3 -std=gnu11 -DADIDMA_NOIRQ -D_POSIX_SOURCE -I libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
+EDCFLAGS+= -I include/ -I drivers/ -I ./ -Wall -O3 -std=gnu11 -DADIDMA_NOIRQ -DTX_UNIT_TEST -DRX_UNIT_TEST -D_POSIX_SOURCE -I libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
 CXXFLAGS:= -I include/ -I imgui/include/ -I ./ -Wall -O3 -fpermissive -std=gnu++11 -I libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
-EDLDFLAGS += -lpthread -lm -liio
+EDLDFLAGS += -lpthread -lm -liio -lusb-1.0
 LIBS = 
 
 ifeq ($(UNAME_S), Linux) #LINUX
@@ -43,7 +43,7 @@ ifeq ($(UNAME_S), Darwin) #APPLE
 	CFLAGS = $(CXXFLAGS)
 endif
 
-LIBS += -lpthread -liio
+LIBS += -lpthread -liio -lusb-1.0
 
 LIBTARGET=imgui/libimgui_glfw.a
 
@@ -62,15 +62,13 @@ RXTARGET=rx.out
 
 all: $(LIBTARGET) $(GUITARGET) $(TXTARGET) $(RXTARGET)
 
-$(GUITARGET): $(LIBTARGET) $(COBJS) $(CPPOBJS) $(TXOBJS) $(RXOBJS)
-	$(CXX) -o $@ $(COBJS) $(CPPOBJS) $(TXOBJS) $(RXOBJS) $(LIBTARGET) $(LIBS)
+$(GUITARGET): $(LIBTARGET) $(COBJS) $(CPPOBJS)
+	$(CXX) -o $@ $(COBJS) $(CPPOBJS) $(LIBTARGET) $(LIBS)
 
-$(TXTARGET): EDCFLAGS+= -DTX_UNIT_TEST
-$(TXTARGET): cleanobjs $(COBJS) $(TXOBJS)
+$(TXTARGET): $(COBJS) $(TXOBJS)
 	$(CC) -o $@ $(COBJS) $(TXOBJS) $(EDLDFLAGS)
 
-$(RXTARGET): EDCFLAGS+= -DRX_UNIT_TEST
-$(RXTARGET): cleanobjs $(COBJS) $(RXOBJS)
+$(RXTARGET): $(COBJS) $(RXOBJS)
 	$(CC) -o $@ $(COBJS) $(RXOBJS) $(EDLDFLAGS)
 
 $(LIBTARGET): imgui
