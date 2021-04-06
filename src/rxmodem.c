@@ -445,6 +445,7 @@ ssize_t rxmodem_receive(rxmodem *dev)
     retcode = frame_hdr->pack_sz; // on success or timeout, send the proper size
 rxmodem_receive_end:
     dev->rx_done = 1; // indicate completion
+    pthread_cancel(dev->thr);
     return retcode;
 }
 

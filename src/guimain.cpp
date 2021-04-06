@@ -118,6 +118,9 @@ void ChatWin(bool *active)
     static char buf[4000] = "Testing...";
     static bool firstRun = true;
     static char chatwindowname[256];
+    static bool transmitted = false;
+    time_t rawtime;
+    static struct tm *timeinfo;
     if (firstRun)
     {
         snprintf(chatwindowname, 256, "Chat @%s", hostname);
@@ -131,8 +134,6 @@ void ChatWin(bool *active)
     ImGui::InputText("To Send", buf, 512, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
     if (ImGui::Button("Transmit"))
     {
-        time_t rawtime;
-        struct tm *timeinfo;
         time(&rawtime);
         timeinfo = localtime(&rawtime);
         ssize_t sz = snprintf(tx_buf, TX_BUF_SIZE, "%s (%04d-%02d-%02d %02d:%02d:%02d) > %s", hostname, timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec, buf);
@@ -142,6 +143,11 @@ void ChatWin(bool *active)
         {
             snprintf(buf, 4000, "Testing...");
         }
+        transmitted = true;
+    }
+    if (transmitted)
+    {
+        ImGui::Text("Last transmitted at: %04d-%02d-%02d %02d:%02d:%02d", timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
     }
     ImGui::End();
 }
