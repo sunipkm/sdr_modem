@@ -468,6 +468,7 @@ int main(int, char **)
     glfwDestroyWindow(window);
     glfwTerminate();
 
+    show_chat_win = false;
     done = 1;
 
     pthread_join(rxthread, NULL);
