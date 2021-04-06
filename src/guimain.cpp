@@ -29,8 +29,8 @@ static void glfw_error_callback(int error, const char *description)
 }
 
 #include "libiio.h"
-// #include "rxmodem.h"
-// #include "txmodem.h"
+#include "rxmodem.h"
+#include "txmodem.h"
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
@@ -49,95 +49,97 @@ void sighandler(int sig)
     done = 1;
 }
 
-// static char md5digest[MD5_DIGEST_LENGTH];
+static char hostname[256];
+static bool isGround = false;
 
-// void md5sum(const char *fname)
-// {
-//     if (fname == NULL)
-//         return;
-//     MD5_CTX c;
-//     char buf[512];
-//     ssize_t bytes;
-//     memset(md5digest, 0x0, MD5_DIGEST_LENGTH);
-//     MD5_Init(&c);
-//     FILE *fp = fopen(fname, "rb");
-//     do
-//     {
-//         bytes = fread(buf, 0x1, 512, fp);
-//         if (bytes > 0)
-//             MD5_Update(&c, buf, bytes);
-//     } while (bytes == 512);
-//     fclose(fp);
-//     MD5_Final(md5digest, &c);
-// }
+bool show_chat_win = false;
 
-// typedef struct
-// {
-//     ssize_t len;
-//     char *buf;
-//     pthread_mutex_t lock[1];
-// } txt_buf;
+#define RX_BUF_SIZE 8192
+char rx_buf[RX_BUF_SIZE];
+ssize_t rx_buf_sz = 0;
+pthread_mutex_t rx_buf_access[1];
 
-// pthread_t rxthread;
-// pthread_mutex_t rxthread_wake_m[1];
-// pthread_cond_t rxthread_wake[1];
-// bool rxthread_rcv_file = false;
-// char rxthread_rcv_fname[256];
-// pthread_mutex_t rcv_file[1];
-// txt_buf rcv_txt[1];
+void *rx_thread_fcn(void *tid)
+{
+    static int retval;
+    rxmodem dev[1];
+    if (rxmodem_init(dev, uio_get_id("rx_ipcore"), uio_get_id("rx_dma")) < 0)
+    {
+        memset(rx_buf, 0x0, RX_BUF_SIZE);
+        rx_buf_sz = snprintf(rx_buf, RX_BUF_SIZE, "%s: Could not initialize RX Modem with uio devices %d and %d", __func__, uio_get_id("rx_ipcore"), uio_get_id("rx_dma"));
+        rx_buf_sz++;
+        retval = -1;
+        goto err;
+    }
+    while (!done)
+    {
+        if (show_chat_win)
+        {
+            ssize_t rcv_sz = rxmodem_receive(dev);
+            if (rcv_sz <= 0)
+            {
+                pthread_mutex_lock(rx_buf_access);
+                memset(rx_buf, 0x0, RX_BUF_SIZE);
+                snprintf(rx_buf, RX_BUF_SIZE, "Receive size invalid: %d", rcv_sz);
+                pthread_mutex_unlock(rx_buf_access);
+                continue;
+            }
+            char *buf = (char *)malloc(rcv_sz);
+            memset(buf, 0x0, rcv_sz);
+            ssize_t rd_sz = rxmodem_read(dev, buf, rcv_sz);
+            pthread_mutex_lock(rx_buf_access);
+            memset(rx_buf, 0x0, RX_BUF_SIZE);
+            snprintf(rx_buf, rd_sz, "%s", buf);
+            rx_buf_sz = rd_sz;
+            if (rd_sz != rcv_sz)
+            {
+                rx_buf[rd_sz] = '\n';
+                rx_buf_sz++;
+                rx_buf_sz += snprintf(rx_buf + rd_sz + 1, RX_BUF_SIZE - rd_sz - 1, "Invalid read: %d out of %d", rd_sz, rcv_sz);
+                rx_buf_sz++;
+            }
+            pthread_mutex_unlock(rx_buf_access);
+        }
+        else
+        {
+            usleep(16000); // 60 Hz
+        }
+    }
+    rxmodem_destroy(dev);
+err:
+    return &retval;
+}
 
-// pthread_t txthread;
-// pthread_mutex_t txthread_wake_m[1];
-// pthread_cond_t txthread_wake[1];
-// bool txthread_send_file = false;
-// char txthread_send_fname[256];
-// txt_buf send_txt[1];
+static txmodem txdev[1];
+#define TX_BUF_SIZE 4096
+static char tx_buf[TX_BUF_SIZE];
+void ChatWin(bool *active)
+{
+    static char buf[4000] = "Testing...";
+    static bool firstRun = true;
+    static char chatwindowname[256];
+    if (firstRun)
+    {
+        snprintf(chatwindowname, 256, "Chat @%s", hostname);
+        firstRun = false;
+    }
+    ImGui::Begin(chatwindowname, active);
+    pthread_mutex_lock(rx_buf_access);
+    ImGui::InputText("Received:", rx_buf, rx_buf_sz, ImGuiInputTextFlags_ReadOnly);
+    pthread_mutex_unlock(rx_buf_access);
 
-// void *rxthread_fcn(void *tid)
-// {
-//     rxmodem dev[1];
-//     if (rxmodem_init(dev, 0, 2) < 0)
-//     {
-//         printf("error initializing RX device\n");
-//         return NULL;
-//     }
-//     memset(rcv_txt, 0x0, sizeof(rcv_txt));
-//     pthread_mutex_init(rcv_txt->lock, NULL);
-//     rxmodem_reset(dev, dev->conf);
-//     while (!done)
-//     {
-//         pthread_cond_wait(rxthread_wake, rxthread_wake_m);
-//         ssize_t rcv_sz = rxmodem_receive(dev);
-//         if (rcv_sz < 0)
-//         {
-//             eprintf("%s: Receive size = %d\n", __func__, rcv_sz);
-//             continue;
-//         }
-//         printf("%s: Received data size: %d\n", __func__, rcv_sz);
-//         fflush(stdout);
-//         if (!rxthread_rcv_file)
-//         {
-//             pthread_mutex_lock(rcv_txt->lock);
-//             if (rcv_txt->buf != NULL)
-//             {
-//                 free(rcv_txt->buf);
-//                 rcv_txt->len = 0;
-//             }
-//             rcv_txt->buf = (char *)malloc(rcv_sz);
-//             rcv_txt->len = rcv_sz;
-//             ssize_t rd_sz = rxmodem_read(dev, (uint8_t *)(rcv_txt->buf), rcv_txt->len);
-//             pthread_mutex_unlock(rcv_txt->lock);
-//             if (rcv_sz != rd_sz)
-//             {
-//                 eprintf("%s: Read size = %d out of %d\n", __func__, rd_sz, rcv_sz);
-//             }
-//         }
-//         else
-//         {
-
-//         }
-//     }
-// }
+    if (ImGui::InputText("Send:", buf, 4000, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        time_t rawtime;
+        struct tm *timeinfo;
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
+        ssize_t sz = snprintf(tx_buf, TX_BUF_SIZE, "%s (%04d-%02d-%02d %02d:%02d:%02d) > %s", hostname, timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec, buf);
+        sz++;
+        txmodem_write(txdev, (uint8_t *)tx_buf, sz);
+    }
+    ImGui::End();
+}
 
 adradio_t phy[1];
 
@@ -292,6 +294,19 @@ void PhyWin(bool *active)
     {
         adradio_reconfigure_dds(phy);
     }
+    ImGui::SameLine();
+    if (ImGui::Button("Reload Default"))
+    {
+        adradio_enable_fir(phy, RX, false);
+        adradio_enable_fir(phy, TX, false);
+        adradio_set_rx_samp(phy, 10000000);
+        adradio_set_tx_samp(phy, 10000000);
+        adradio_set_rx_bw(phy, 10000000);
+        adradio_set_tx_bw(phy, 10000000);
+        adradio_set_tx_lo(phy, isGround ? 2400000000 : 2500000000);
+        adradio_set_rx_lo(phy, isGround ? 2500000000 : 2400000000);
+        adradio_reconfigure_dds(phy);
+    }
     if (ImGui::InputText("Filter File", ftr_fname, IM_ARRAYSIZE(ftr_fname), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         char buf[256];
@@ -311,25 +326,48 @@ void PhyWin(bool *active)
     {
         adradio_set_ensm_mode(phy, phymode);
     }
+    ImGui::Checkbox("Chat Window", &show_chat_win);
+    ImGui::SameLine();
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::End();
 }
 
 int main(int, char **)
 {
+    // set up phy configuration tool
     if (adradio_init(phy) != EXIT_SUCCESS)
-        return 0;
-    char hostname[256];
+        return 1;
+    // set hostname
     char progname[256];
     if (!gethostname(hostname, 256))
         snprintf(progname, 256, "AD9361 Configuration Utility");
     else
-        snprintf(progname, 256, "AD9361 Configuration Utility @%s", hostname);
+        snprintf(progname, 256, "AD9361 Configuration Utility @ %s", hostname);
+    if (strncasecmp("adrv9361", hostname, strlen("adrv9361")) == 0)
+        isGround = true;
+    // Set up TX modem
+    if (txmodem_init(txdev, uio_get_id("tx_ipcore"), uio_get_id("tx_dma")) < 0)
+    {
+        eprintf("Could not initialize TX modem\n");
+        adradio_destroy(phy);
+        return 2;
+    }
+    // Set up RX modem
+    pthread_t rxthread;
+    if (pthread_create(&rxthread, NULL, &rx_thread_fcn, NULL) != 0)
+    {
+        eprintf("Could not initialize RX thread\n");
+        txmodem_destroy(txdev);
+        adradio_destroy(phy);
+        return 3;
+    }
+    // register signal handler
+    signal(SIGINT, &sighandler);
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         return 1;
-    ImVec2 mainwinsize = {712, 400};
+    ImVec2 mainwinsize = {712, 800};
     GLFWwindow *window = glfwCreateWindow((int)mainwinsize.x, (int)mainwinsize.y, progname, NULL, NULL);
     if (window == NULL)
         return 1;
@@ -390,6 +428,13 @@ int main(int, char **)
         ImGui::SetNextWindowSize(mainwinsize);
         PhyWin(&show_phy_win);
 
+        if (show_chat_win)
+        {
+            ImGui::SetNextWindowPos(ImVec2(0, 400));
+            ImGui::SetNextWindowSize(mainwinsize);
+            ChatWin(&show_chat_win);
+        }
+
         // Rendering
         ImGui::Render();
         int display_w, display_h;
@@ -418,6 +463,10 @@ int main(int, char **)
     glfwDestroyWindow(window);
     glfwTerminate();
 
+    done = 1;
+
+    pthread_join(rxthread, NULL);
+    txmodem_destroy(txdev);
     adradio_destroy(phy);
     return 0;
 }

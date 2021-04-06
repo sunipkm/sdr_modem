@@ -15,7 +15,7 @@ endif
 
 UNAME_S := $(shell uname -s)
 
-EDCFLAGS+= -I include/ -I drivers/ -I ./ -Wall -O3 -std=gnu11 -DADIDMA_NOIRQ -DTX_UNIT_TEST -DRX_UNIT_TEST -D_POSIX_SOURCE -I libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
+EDCFLAGS+= -I include/ -I drivers/ -I ./ -Wall -O3 -std=gnu11 -DADIDMA_NOIRQ -D_POSIX_SOURCE -I libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
 CXXFLAGS:= -I include/ -I imgui/include/ -I ./ -Wall -O3 -fpermissive -std=gnu++11 -I libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
 EDLDFLAGS += -lpthread -lm -liio
 LIBS = 
@@ -62,13 +62,15 @@ RXTARGET=rx.out
 
 all: $(LIBTARGET) $(GUITARGET) $(TXTARGET) $(RXTARGET)
 
-$(GUITARGET): $(LIBTARGET) $(COBJS) $(CPPOBJS)
-	$(CXX) -o $@ $(COBJS) $(CPPOBJS) $(LIBTARGET) $(LIBS)
+$(GUITARGET): $(LIBTARGET) $(COBJS) $(CPPOBJS) $(TXOBJS) $(RXOBJS)
+	$(CXX) -o $@ $(COBJS) $(CPPOBJS) $(TXOBJS) $(RXOBJS) $(LIBTARGET) $(LIBS)
 
-$(TXTARGET): $(COBJS) $(TXOBJS)
+$(TXTARGET): cleanobjs $(COBJS) $(TXOBJS)
+	EDCFLAGS += -DTX_UNIT_TEST
 	$(CC) -o $@ $(COBJS) $(TXOBJS) $(EDLDFLAGS)
 
-$(RXTARGET): $(COBJS) $(RXOBJS)
+$(RXTARGET): cleanobjs $(COBJS) $(RXOBJS)
+	EDCFLAGS += -DRX_UNIT_TEST
 	$(CC) -o $@ $(COBJS) $(RXOBJS) $(EDLDFLAGS)
 
 $(LIBTARGET): imgui
@@ -81,12 +83,14 @@ $(LIBTARGET): imgui
 	
 .PHONY: clean
 
-clean:
-	$(RM) *.out
+cleanobjs:
 	$(RM) $(COBJS)
 	$(RM) $(RXOBJS)
 	$(RM) $(TXOBJS)
 	$(RM) $(CPPOBJS)
+
+clean: cleanobjs
+	$(RM) *.out
 
 spotless: clean
 	cd imgui && make spotless && cd ..
