@@ -15,9 +15,10 @@ endif
 
 UNAME_S := $(shell uname -s)
 
-EDCFLAGS+= -I include/ -I drivers/ -I ./ -Wall -O3 -std=gnu11 -DADIDMA_NOIRQ -DTX_UNIT_TEST -DRX_UNIT_TEST -D_POSIX_SOURCE -I libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
+EDCFLAGS+= -I include/ -I drivers/ -I ./ -Wall -O3 -std=gnu11 -DADIDMA_NOIRQ -D_POSIX_SOURCE -I libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
 CXXFLAGS:= -I include/ -I imgui/include/ -I ./ -Wall -O3 -fpermissive -std=gnu++11 -I libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
 # EDCFLAGS+= -DRXDEBUG
+CXXFLAGS+= -DENABLE_MODEM
 EDLDFLAGS += -lpthread -lm -liio -lusb-1.0
 LIBS = 
 
@@ -53,9 +54,11 @@ CPPOBJS=src/guimain.o
 COBJS=src/adidma.o \
 	src/libiio.o \
 	src/libuio.o \
+	src/txmodem.o \
+	src/rxmodem.o
 
-TXOBJS=src/txmodem.o
-RXOBJS=src/rxmodem.o
+TXOBJS=src/txtest.o
+RXOBJS=src/rxtest.o
 
 GUITARGET=phy.out
 TXTARGET=tx.out
