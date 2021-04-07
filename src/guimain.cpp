@@ -122,6 +122,7 @@ void ChatWin(bool *active)
     static bool transmitted = false;
     time_t rawtime;
     static struct tm *timeinfo;
+    static int mtu = 0;
     if (firstRun)
     {
         snprintf(chatwindowname, 256, "Chat @%s", hostname);
@@ -133,7 +134,12 @@ void ChatWin(bool *active)
     pthread_mutex_unlock(rx_buf_access);
 
     ImGui::InputText("To Send", buf, 512, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
-    ImGui::InputInt("MTU", &(txdev->mtu), 0, 0, ImGuiInputTextFlags_AutoSelectAll);
+    if(ImGui::InputInt("MTU", &mtu, 0, 0, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        if (mtu < 0)
+            mtu = 0;
+        txdev->mtu = mtu;
+    }
     ImGui::SameLine();
     if (ImGui::Button("Transmit"))
     {
