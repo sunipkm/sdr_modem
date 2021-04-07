@@ -184,7 +184,6 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
 
 static void *rx_irq_thread(void *__dev)
 {
-    pthread_mutex_lock(&rx_irq_thread_running);
     int retcode = 1;
     rxmodem *dev = (rxmodem *)__dev;
     rxmodem_reset(dev, dev->conf);
@@ -272,7 +271,6 @@ rx_irq_thread_exit:
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
     rxmodem_stop(dev);
-    pthread_mutex_unlock(&rx_irq_thread_running);
     // dev->retcode = retcode;
     return NULL;
 }
