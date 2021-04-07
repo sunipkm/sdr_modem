@@ -100,6 +100,7 @@ void *rx_thread_fcn(void *tid)
                 rx_buf_sz++;
             }
             pthread_mutex_unlock(rx_buf_access);
+            free(buf);
         }
         else
         {

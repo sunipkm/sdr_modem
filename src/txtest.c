@@ -3,15 +3,23 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <time.h>
+#include <signal.h>
 #include "txmodem.h"
 
 #define eprintf(...)              \
     fprintf(stderr, __VA_ARGS__); \
     fflush(stderr)
-    
+
+volatile sig_atomic_t done = 0;
+int sighandler(int sig)
+{
+    done = 1;
+}
+
 int main(int argc, char *argv[])
 {
-    printf("Starting program...\n");
+    signal(SIGINT | SIGHUP, &sighandler);
+    printf("Starting program, press Ctrl + C to exit\n");
     printf("Creating message\n");
     time_t rawtime;
     struct tm *timeinfo;
@@ -249,11 +257,14 @@ int main(int argc, char *argv[])
     txmodem dev[1];
     if (txmodem_init(dev, uio_get_id("tx_ipcore"), uio_get_id("tx_dma")) < 0)
         return -1;
-    txmodem_reset(dev, 0);
-    printf("Enter MTU to transmit, enter . to continue with default MTU: ");
-    char buf[10];
-    scanf(" %s", buf);
-    dev->mtu = strtol(buf, 0x0, 10);
-    txmodem_write(dev, (uint8_t *)msg, size);
+    while (!done)
+    {
+        txmodem_reset(dev, 0);
+        printf("Enter MTU to transmit, enter . to continue with default MTU: ");
+        char buf[10];
+        scanf(" %s", buf);
+        dev->mtu = strtol(buf, 0x0, 10);
+        txmodem_write(dev, (uint8_t *)msg, size);
+    }
     return 0;
 }
