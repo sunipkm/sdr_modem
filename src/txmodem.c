@@ -168,7 +168,7 @@ int txmodem_write(txmodem *dev, uint8_t *buf, ssize_t size)
         memset(dev->dma->mem_virt_addr, 0x0, max_frame_sz);
         max_frame_sz -= sizeof(uint64_t);
         memcpy(dev->dma->mem_virt_addr, &max_frame_sz, sizeof(uint64_t));
-        return adidma_write(dev->dma, 0x0, max_frame_sz, 0);
+        return adidma_write(dev->dma, 0x0, max_frame_sz + sizeof(uint64_t), 0);
     }
     return 0;
 }
@@ -405,9 +405,23 @@ int main(int argc, char *argv[])
                          "\n\n\n"
                          "End of transmission";
 
-    ssize_t size = snprintf(msg, (1 << 16) - 1, fmt_str, timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-    memcpy(msg + size, msg2, strlen(msg2));
-    size += strlen(msg2);
+    ssize_t size;
+    if (argc == 1)
+    {
+        size = snprintf(msg, (1 << 16) - 1, fmt_str, timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+        memcpy(msg + size, msg2, strlen(msg2));
+        size += strlen(msg2);
+    }
+    else
+    {
+        FILE *fp = fopen("test.txt", "rb");
+        fseek(fp, 0L, SEEK_END);
+        size = ftell(fp);
+        fseek(fp, 0L, SEEK_SET);
+        size = size > (1 << 16) - 1 ? (1 << 16) - 1 : size;
+        fread(msg, 1, size, fp);
+        fclose(fp);
+    }
     txmodem dev[1];
     if (txmodem_init(dev, uio_get_id("tx_ipcore"), uio_get_id("tx_dma")) < 0)
         return -1;
