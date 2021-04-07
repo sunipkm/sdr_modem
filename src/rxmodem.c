@@ -115,7 +115,6 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
 {
     if (dev == NULL)
         return -1;
-    dev->frame_ofst = NULL; // init
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
     pthread_mutex_init(&rx_irq_thread_running, &attr);
@@ -171,6 +170,14 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
     {
         eprintf("%s: Unable to mask RX interrupt, ", __func__);
         perror("uio_mask_irq");
+    }
+    dev->frame_ofst = NULL;
+    dev->frame_ofst = (ssize_t *) malloc (dev->dma->mem_sz / TXRX_MTU_MIN); // maximum number of frame offsets
+    if (dev->frame_ofst == NULL)
+    {
+        eprintf("%s: Unable to allocate memory for frame offset, ", __func__);
+        perror("malloc");
+        return -1;
     }
     return 1;
 }
@@ -233,28 +240,6 @@ static void *rx_irq_thread(void *__dev)
             goto rx_irq_thread_exit;
         }
         pthread_mutex_lock(&frame_ofst_m);
-        if (dev->frame_ofst == NULL) // case: == 0
-            dev->frame_ofst = (ssize_t *)malloc(sizeof(ssize_t) * (frame_num + 1));
-        else
-        {
-#ifdef RXDEBUG
-            eprintf("%s: Realloc: Source %p, size = %u | ", __func__, dev->frame_ofst, frame_num);
-#endif
-            dev->frame_ofst = (ssize_t *)realloc(dev->frame_ofst, sizeof(ssize_t) * (frame_num + 1));
-#ifdef RXDEBUG
-            eprintf("Dest: %p, size = %u\n", dev->frame_ofst, frame_num + 1);
-#endif
-        }
-#ifdef RXDEBUG
-        eprintf("%s: %d\n", __func__, __LINE__);
-#endif
-        if (dev->frame_ofst == NULL)
-        {
-            eprintf("%s: Frame offset array is NULL\n", __func__);
-            dev->retcode = RX_MALLOC_FAILED;
-            pthread_cond_signal(&rx_rcv);
-            goto rx_irq_thread_exit;
-        }
         (dev->frame_ofst)[frame_num] = ofst;
         pthread_mutex_unlock(&frame_ofst_m);
 #ifdef RXDEBUG
