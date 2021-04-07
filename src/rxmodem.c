@@ -450,7 +450,7 @@ ssize_t rxmodem_read(rxmodem *dev, uint8_t *buf, ssize_t size)
         // read in frame header
         memcpy(frame_hdr, dev->dma->mem_virt_addr + ofst, sizeof(modem_frame_header_t));
         // copy out data, perform CRC etc
-        if (total_read + frame_hdr->frame_sz < size) // memcpy valid only when this is true
+        if (total_read + frame_hdr->frame_sz <= size) // memcpy valid only when this is true
         {
             memcpy(buf + total_read, dev->dma->mem_virt_addr + ofst + sizeof(modem_frame_header_t), frame_hdr->frame_sz);
             // check CRC
@@ -559,12 +559,14 @@ int main(int argc, char *argv[])
     printf("Message:");
     for (int i = 0; i < rd_sz; i++)
         printf("%c", buf[i]);
+#ifdef RXDEBUG
     FILE *fp = fopen("out_rx.txt", "wb");
-    for (int i = 0; i < rd_sz; i++)
+    for (int i = 0; i < rcv_sz; i++)
     {
         fprintf(fp, "%c", ((char *)dev->dma->mem_virt_addr)[i]);
     }
     fclose(fp);
+#endif
     printf("\n");
     free(buf);
     rxmodem_destroy(dev);
