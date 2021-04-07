@@ -26,6 +26,8 @@ int main(int argc, char *argv[])
     rxmodem_reset(dev, dev->conf);
     while (!done)
     {
+        printf("\n\nWaiting to receive...\n");
+        fflush(stdout);
         ssize_t rcv_sz = rxmodem_receive(dev);
         if (rcv_sz < 0)
         {
