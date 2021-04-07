@@ -17,6 +17,7 @@ UNAME_S := $(shell uname -s)
 
 EDCFLAGS+= -I include/ -I drivers/ -I ./ -Wall -O3 -std=gnu11 -DADIDMA_NOIRQ -DTX_UNIT_TEST -DRX_UNIT_TEST -D_POSIX_SOURCE -I libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
 CXXFLAGS:= -I include/ -I imgui/include/ -I ./ -Wall -O3 -fpermissive -std=gnu++11 -I libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
+EDCFLAGS+= -DRXDEBUG
 EDLDFLAGS += -lpthread -lm -liio -lusb-1.0
 LIBS = 
 

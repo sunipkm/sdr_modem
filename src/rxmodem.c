@@ -251,7 +251,7 @@ static void *rx_irq_thread(void *__dev)
 #endif
         if (dev->rx_done)
             break;
-        dev->retcode = adidma_read(dev->dma, ofst, frame_sz + frame_num - 1 + sizeof(uint32_t));
+        dev->retcode = adidma_read(dev->dma, ofst, frame_sz + sizeof(uint32_t));
 #ifdef RXDEBUG
         eprintf("%s: %d\n", __func__, __LINE__);
         fprint_frame_hdr(stdout, dev->dma->mem_virt_addr + ofst);
