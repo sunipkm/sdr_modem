@@ -133,7 +133,7 @@ void ChatWin(bool *active)
     pthread_mutex_unlock(rx_buf_access);
 
     ImGui::InputText("To Send", buf, 512, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
-    ImGui::InputInt("MTU", &(dev->mtu), 0, 0, ImGuiInputTextFlags_AutoSelectAll);
+    ImGui::InputInt("MTU", &(txdev->mtu), 0, 0, ImGuiInputTextFlags_AutoSelectAll);
     ImGui::SameLine();
     if (ImGui::Button("Transmit"))
     {
