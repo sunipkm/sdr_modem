@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
         if (rcv_sz < 0)
         {
             eprintf("%s: Receive size = %d\n", __func__, rcv_sz);
-            return -1;
+            continue;
         }
         printf("%s: Received data size: %d\n", __func__, rcv_sz);
         fflush(stdout);
