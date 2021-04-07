@@ -4,6 +4,11 @@
 #include <unistd.h>
 #include <time.h>
 #include "rxmodem.h"
+
+#define eprintf(...)              \
+    fprintf(stderr, __VA_ARGS__); \
+    fflush(stderr)
+    
 int main(int argc, char *argv[])
 {
     printf("Starting program...\n");
