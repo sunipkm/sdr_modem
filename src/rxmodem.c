@@ -172,7 +172,7 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
         perror("uio_mask_irq");
     }
     dev->frame_ofst = NULL;
-    dev->frame_ofst = (ssize_t *) malloc (dev->dma->mem_sz / TXRX_MTU_MIN); // maximum number of frame offsets
+    dev->frame_ofst = (ssize_t *)malloc(dev->dma->mem_sz / TXRX_MTU_MIN); // maximum number of frame offsets
     if (dev->frame_ofst == NULL)
     {
         eprintf("%s: Unable to allocate memory for frame offset, ", __func__);
@@ -449,24 +449,29 @@ ssize_t rxmodem_read(rxmodem *dev, uint8_t *buf, ssize_t size)
 #endif
         // read in frame header
         memcpy(frame_hdr, dev->dma->mem_virt_addr + ofst, sizeof(modem_frame_header_t));
-        // copy out data
-        memcpy(buf + total_read, dev->dma->mem_virt_addr + ofst + sizeof(modem_frame_header_t), frame_hdr->frame_sz);
-        // check CRC
-        if (frame_hdr->frame_crc == frame_hdr->frame_crc2)
+        // copy out data, perform CRC etc
+        if (total_read + frame_hdr->frame_sz < size) // memcpy valid only when this is true
         {
-            uint16_t crcval = crc16(buf + total_read, frame_hdr->frame_sz);
-            if (frame_hdr->frame_crc == crcval)
-                valid_read += frame_hdr->frame_sz;
+            memcpy(buf + total_read, dev->dma->mem_virt_addr + ofst + sizeof(modem_frame_header_t), frame_hdr->frame_sz);
+            // check CRC
+            if (frame_hdr->frame_crc == frame_hdr->frame_crc2)
+            {
+                uint16_t crcval = crc16(buf + total_read, frame_hdr->frame_sz);
+                if (frame_hdr->frame_crc == crcval)
+                    valid_read += frame_hdr->frame_sz;
+                else
+                {
+                    eprintf("%s: Valid CRC = 0x%x, Calculated CRC = 0x%x\n", __func__, frame_hdr->frame_crc, crcval);
+                }
+            }
             else
             {
-                eprintf("%s: Valid CRC = 0x%x, Calculated CRC = 0x%x\n", __func__, frame_hdr->frame_crc, crcval);
+                eprintf("%s: CRC invalid in frame header\n", __func__);
             }
+            total_read += frame_hdr->frame_sz;
         }
         else
-        {
-            eprintf("%s: CRC invalid in frame header\n", __func__);
-        }
-        total_read += frame_hdr->frame_sz;
+            break;
     }
     return valid_read;
 }
