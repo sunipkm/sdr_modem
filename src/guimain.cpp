@@ -225,7 +225,7 @@ void PhyWin(bool *active)
         _bw_tx = bw * 1e-6;
         _samp_tx = samp * 1e-6;
         gain_tx = gain;
-        snprintf(ftr_fname, 256, "Enter Filter File Name");
+        snprintf(ftr_fname, 128, "Enter Filter File Name");
     }
     ImGui::Text("TX:");
     ImGui::NextColumn();
