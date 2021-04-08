@@ -217,7 +217,7 @@ void PhyWin(bool *active)
 
     adradio_get_tx_lo(phy, &lo);
     adradio_get_tx_bw(phy, &bw);
-    adradio_get_tx_samp(phy, &samp);
+    adradio_get_samp(phy, &samp);
     adradio_get_tx_hardwaregain(phy, &gain);
     if (firstrun)
     {
@@ -240,7 +240,7 @@ void PhyWin(bool *active)
 
     adradio_get_rx_lo(phy, &lo);
     adradio_get_rx_bw(phy, &bw);
-    adradio_get_rx_samp(phy, &samp);
+    adradio_get_samp(phy, &samp);
     adradio_get_rx_hardwaregain(phy, &gain);
     if (firstrun)
     {
@@ -271,9 +271,9 @@ void PhyWin(bool *active)
     {
         adradio_set_tx_lo(phy, MHZ(_lo_tx));
     }
-    if (ImGui::InputFloat("TX Samp (MHz)", &_samp_tx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("Sample Rate (MHz)", &_samp_tx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        adradio_set_tx_samp(phy, MHZ(_samp_tx));
+        adradio_set_samp(phy, MHZ(_samp_tx));
     }
     if (ImGui::InputFloat("TX BW", &_bw_tx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
@@ -288,10 +288,6 @@ void PhyWin(bool *active)
     {
         adradio_set_rx_lo(phy, MHZ(_lo_rx));
     }
-    if (ImGui::InputFloat("RX Samp (MHz)", &_samp_rx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
-    {
-        adradio_set_rx_samp(phy, MHZ(_samp_rx));
-    }
     if (ImGui::InputFloat("RX BW (MHz)", &_bw_rx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         adradio_set_rx_bw(phy, MHZ(_bw_rx));
@@ -301,17 +297,11 @@ void PhyWin(bool *active)
         adradio_set_rx_hardwaregainmode(phy, (enum gain_mode)(gainmode + 1));
     }
     ImGui::Separator();
-    static bool tx_ftr_en = true, rx_ftr_en = true;
-    adradio_check_fir(phy, TX, &tx_ftr_en);
-    adradio_check_fir(phy, RX, &rx_ftr_en);
-    if (ImGui::Checkbox("Enable TX FIR Filter", &tx_ftr_en))
+    static bool ftr_en = true;
+    adradio_check_fir(phy, &ftr_en);
+    if (ImGui::Checkbox("Enable FIR Filter", &ftr_en))
     {
-        adradio_enable_fir(phy, TX, tx_ftr_en);
-    }
-    ImGui::SameLine();
-    if (ImGui::Checkbox("Enable RX FIR Filter", &rx_ftr_en))
-    {
-        adradio_enable_fir(phy, RX, rx_ftr_en);
+        adradio_enable_fir(phy, ftr_en);
     }
     ImGui::SameLine();
     if (ImGui::Button("Reload DDS Config"))
@@ -321,10 +311,8 @@ void PhyWin(bool *active)
     ImGui::SameLine();
     if (ImGui::Button("Reload Default"))
     {
-        adradio_enable_fir(phy, RX, false);
-        adradio_enable_fir(phy, TX, false);
-        adradio_set_rx_samp(phy, 10000000);
-        adradio_set_tx_samp(phy, 10000000);
+        adradio_enable_fir(phy, false);
+        adradio_set_samp(phy, 10000000);
         adradio_set_rx_bw(phy, 10000000);
         adradio_set_tx_bw(phy, 10000000);
         adradio_set_tx_lo(phy, isGround ? 2400000000 : 2500000000);

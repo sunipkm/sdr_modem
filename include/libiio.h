@@ -97,15 +97,7 @@ extern "C"
      * @param freq 
      * @return int EXIT_SUCCESS or EXIT_FAILURE
      */
-    int adradio_set_tx_samp(adradio_t *dev, long long freq);
-    /**
-     * @brief 
-     * 
-     * @param dev adradio_t struct
-     * @param freq 
-     * @return int EXIT_SUCCESS or EXIT_FAILURE
-     */
-    int adradio_set_rx_samp(adradio_t *dev, long long freq);
+    int adradio_set_samp(adradio_t *dev, long long freq);
     /**
      * @brief 
      * 
@@ -145,15 +137,7 @@ extern "C"
      * @param freq 
      * @return int EXIT_SUCCESS or EXIT_FAILURE
      */
-    int adradio_get_tx_samp(adradio_t *dev, long long *freq);
-    /**
-     * @brief 
-     * 
-     * @param dev adradio_t struct
-     * @param freq 
-     * @return int EXIT_SUCCESS or EXIT_FAILURE
-     */
-    int adradio_get_rx_samp(adradio_t *dev, long long *freq);
+    int adradio_get_samp(adradio_t *dev, long long *freq);
     /**
      * @brief 
      * 
@@ -199,20 +183,18 @@ extern "C"
      * @brief Check if FIR filter is enabled on the radio
      * 
      * @param dev adradio_t struct
-     * @param trx TX or RX channel
      * @param cond FIR filter attribute
      * @return int EXIT_SUCCESS or EXIT_FAILURE
      */
-    int adradio_check_fir(adradio_t *dev, enum iodev trx, bool *cond);
+    int adradio_check_fir(adradio_t *dev, bool *cond);
     /**
      * @brief Enable or disable FIR filter on the radio
      * 
      * @param dev adradio_t struct
-     * @param trx TX or RX channel
      * @param cond enabled on true, disabled on false
      * @return int EXIT_SUCCESS or EXIT_FAILURE
      */
-    int adradio_enable_fir(adradio_t *dev, enum iodev trx, bool cond);
+    int adradio_enable_fir(adradio_t *dev, bool cond);
     /**
      * @brief Load a FIR filter from file into device. NOTE: Does not enable the filters
      * 

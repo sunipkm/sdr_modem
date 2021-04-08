@@ -132,24 +132,14 @@ int adradio_get_rx_lo(adradio_t *dev, long long *freq)
     return iio_channel_attr_read_longlong(dev->rx_lo, "frequency", freq);
 }
 
-int adradio_set_tx_samp(adradio_t *dev, long long freq)
+int adradio_set_samp(adradio_t *dev, long long freq)
 {
     return iio_channel_attr_write_longlong(dev->tx_iq, "sampling_frequency", freq);
 }
 
-int adradio_get_tx_samp(adradio_t *dev, long long *freq)
+int adradio_get_samp(adradio_t *dev, long long *freq)
 {
     return iio_channel_attr_read_longlong(dev->tx_iq, "sampling_frequency", freq);
-}
-
-int adradio_set_rx_samp(adradio_t *dev, long long freq)
-{
-    return iio_channel_attr_write_longlong(dev->rx_iq, "sampling_frequency", freq);
-}
-
-int adradio_get_rx_samp(adradio_t *dev, long long *freq)
-{
-    return iio_channel_attr_read_longlong(dev->rx_iq, "sampling_frequency", freq);
 }
 
 int adradio_set_tx_bw(adradio_t *dev, long long freq)
@@ -224,21 +214,17 @@ int adradio_get_ensm_mode(adradio_t *dev, char *buf, ssize_t len)
     return iio_device_attr_read(dev->ad_phy, "ensm_mode", buf, len);
 }
 
-int adradio_enable_fir(adradio_t *dev, enum iodev trx, bool cond)
+int adradio_enable_fir(adradio_t *dev, bool cond)
 {
-    if (trx == TX)
-        return iio_channel_attr_write_bool(dev->tx_iq, "filter_fir_en", cond);
-    if (trx == RX)
-        return iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", cond);
-    return EXIT_FAILURE;
+        return iio_channel_attr_write_bool(dev->tx_iq, "filter_fir_en", cond) & iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", cond);
 }
 
-int adradio_check_fir(adradio_t *dev, enum iodev trx, bool *cond)
+int adradio_check_fir(adradio_t *dev, bool *cond)
 {
-    if (trx == TX)
-        return iio_channel_attr_read_bool(dev->tx_iq, "filter_fir_en", cond);
-    if (trx == RX)
-        return iio_channel_attr_read_bool(dev->rx_iq, "filter_fir_en", cond);
+    bool res1, res2;
+    int status = iio_channel_attr_read_bool(dev->tx_iq, "filter_fir_en", &res1);
+    status &= iio_channel_attr_read_bool(dev->rx_iq, "filter_fir_en", &res2);
+    *cond = (res1 & res2);
     return EXIT_FAILURE;
 }
 
