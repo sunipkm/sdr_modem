@@ -137,7 +137,7 @@ void ChatWin(bool *active)
     ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.4);
     ImGui::InputTextMultiline("To Send", tmptxbuf, 4000, ImVec2(ImGui::GetWindowWidth() - 100, ImGui::GetWindowHeight() * 0.4 - 20), ImGuiInputTextFlags_AutoSelectAll);
     ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.8);
-    if(ImGui::InputInt("MTU", &mtu, 0, 0, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputInt("MTU", &mtu, 0, 0, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         if (mtu < 0)
             mtu = 0;
@@ -267,13 +267,14 @@ void PhyWin(bool *active)
 
     ImGui::Columns(1);
     ImGui::Text("Set Outputs: ");
-    if (ImGui::InputFloat("TX LO (MHz)", &_lo_tx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
-    {
-        adradio_set_tx_lo(phy, MHZ(_lo_tx));
-    }
     if (ImGui::InputFloat("Sample Rate (MHz)", &_samp_tx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         adradio_set_samp(phy, MHZ(_samp_tx));
+    }
+    ImGui::Separator();
+    if (ImGui::InputFloat("TX LO (MHz)", &_lo_tx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        adradio_set_tx_lo(phy, MHZ(_lo_tx));
     }
     if (ImGui::InputFloat("TX BW", &_bw_tx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
