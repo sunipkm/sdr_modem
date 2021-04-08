@@ -201,7 +201,7 @@ void PhyWin(bool *active)
     ImGui::NextColumn();
     ImGui::Text("RSSI: %.2lf dB", rssi);
     ImGui::NextColumn();
-    ImGui::Text("Gain Control Mode: %s", curgainmode);
+    ImGui::Text("Gain Control: %s", curgainmode);
 
     ImGui::Columns(5, "phy_outputs", true);
     ImGui::Text(" ");
@@ -276,7 +276,7 @@ void PhyWin(bool *active)
     {
         adradio_set_tx_lo(phy, MHZ(_lo_tx));
     }
-    if (ImGui::InputFloat("TX BW", &_bw_tx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputFloat("TX BW (MHz)", &_bw_tx, 0, 0, "%.3f", ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         adradio_set_tx_bw(phy, MHZ(_bw_tx));
     }
