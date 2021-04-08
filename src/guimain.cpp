@@ -325,7 +325,7 @@ void PhyWin(bool *active)
     {
         char buf[256];
         snprintf(buf, 256, "/home/sunip/%s", ftr_fname);
-        if (access(ftr_fname, F_OK | R_OK))
+        if (access(ftr_fname, R_OK))
         {
             snprintf(ftr_fname, IM_ARRAYSIZE(ftr_fname), "Invalid file %s", buf);
         }
