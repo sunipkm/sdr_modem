@@ -180,7 +180,7 @@ void PhyWin(bool *active)
     static int gainmode;
     static char *gainmodestr[] = {"slow_attack", "fast_attack"};
     static char *phymodestr[] = {"Sleep", "FDD", "TDD"};
-    static char ftr_fname[256];
+    static char ftr_fname[128];
     static char ensmmode[256];
     enum ensm_mode phymode;
     char curgainmode[32];
@@ -319,7 +319,9 @@ void PhyWin(bool *active)
         adradio_set_rx_lo(phy, isGround ? 2500000000 : 2400000000);
         adradio_reconfigure_dds(phy);
     }
-    if (ImGui::InputText("Filter File", ftr_fname, IM_ARRAYSIZE(ftr_fname), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+    ImGui::InputText("Filter File", ftr_fname, IM_ARRAYSIZE(ftr_fname), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
+    ImGui::SameLine();
+    if (ImGui::Button("Load Filter"))
     {
         char buf[256];
         snprintf(buf, 256, "/home/sunip/%s", ftr_fname);
