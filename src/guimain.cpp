@@ -115,9 +115,9 @@ err:
 static txmodem txdev[1];
 #define TX_BUF_SIZE 4096
 static char tx_buf[TX_BUF_SIZE];
+static char tmptxbuf[4000];
 void ChatWin(bool *active)
 {
-    static char buf[4000] = "Testing...";
     static bool firstRun = true;
     static char chatwindowname[256];
     static bool transmitted = false;
@@ -126,6 +126,7 @@ void ChatWin(bool *active)
     static int mtu = 0;
     if (firstRun)
     {
+        snprintf(tmptxbuf, 4000, "Testing...");
         snprintf(chatwindowname, 256, "Chat @%s", hostname);
         firstRun = false;
     }
@@ -134,7 +135,7 @@ void ChatWin(bool *active)
     ImGui::TextWrapped("Received: %s", rx_buf);
     pthread_mutex_unlock(rx_buf_access);
     ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.4);
-    ImGui::InputTextMultiline("To Send", buf, 4000, ImVec2(ImGui::GetWindowWidth() - 100, ImGui::GetWindowHeight() * 0.4 - 20), ImGuiInputTextFlags_AutoSelectAll);
+    ImGui::InputTextMultiline("To Send", tmptxbuf, 4000, ImVec2(ImGui::GetWindowWidth() - 100, ImGui::GetWindowHeight() * 0.4 - 20), ImGuiInputTextFlags_AutoSelectAll);
     ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.8);
     if(ImGui::InputInt("MTU", &mtu, 0, 0, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
@@ -147,12 +148,12 @@ void ChatWin(bool *active)
     {
         time(&rawtime);
         timeinfo = localtime(&rawtime);
-        ssize_t sz = snprintf(tx_buf, TX_BUF_SIZE, "%s (%04d-%02d-%02d %02d:%02d:%02d) > %s", hostname, timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec, buf);
+        ssize_t sz = snprintf(tx_buf, TX_BUF_SIZE, "%s (%04d-%02d-%02d %02d:%02d:%02d) > %s", hostname, timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec, tmptxbuf);
         sz++;
         txmodem_write(txdev, (uint8_t *)tx_buf, sz);
-        if (strlen(buf) < 2)
+        if (strlen(tmptxbuf) < 2)
         {
-            snprintf(buf, 4000, "Testing...");
+            snprintf(tmptxbuf, 4000, "Testing...");
         }
         transmitted = true;
     }
