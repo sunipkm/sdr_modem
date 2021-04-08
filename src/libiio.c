@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #define __USE_MISC
 #include <unistd.h>
 #undef __USE_MISC
@@ -228,6 +230,16 @@ int adradio_check_fir(adradio_t *dev, bool *cond)
     return EXIT_FAILURE;
 }
 
+static bool check_file(const char *fname)
+{
+    int ret;
+    struct stat s;
+    ret = stat(fname, &s);
+    if (ret)
+        return false;
+    return (bool) S_ISREG(s.st_mode);
+}
+
 int adradio_load_fir(adradio_t *dev, const char *fname)
 {
     int ret;
@@ -252,6 +264,11 @@ int adradio_load_fir(adradio_t *dev, const char *fname)
     {
         eprintf("%s: Could not disable TX FIR filter for application, exiting...\n", __func__);
         return ret;
+    }
+    if (!check_file(fname))
+    {
+        eprintf("%s: %s is not a regular file or does not exist\n", __func__, fname);
+        return EXIT_FAILURE;
     }
     FILE *fp = fopen(fname, "r");
     if (fp == NULL)
