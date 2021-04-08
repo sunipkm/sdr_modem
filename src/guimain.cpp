@@ -131,10 +131,11 @@ void ChatWin(bool *active)
     }
     ImGui::Begin(chatwindowname, active);
     pthread_mutex_lock(rx_buf_access);
-    ImGui::Text("Received: %s", rx_buf);
+    ImGui::TextWrapped("Received: %s", rx_buf);
     pthread_mutex_unlock(rx_buf_access);
-
-    ImGui::InputText("To Send", buf, 512, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
+    ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.4);
+    ImGui::InputTextMultiline("To Send", buf, 4000, ImVec2(ImGui::GetWindowWidth() - 100, ImGui::GetWindowHeight() * 0.4 - 20), ImGuiInputTextFlags_AutoSelectAll);
+    ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.8);
     if(ImGui::InputInt("MTU", &mtu, 0, 0, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         if (mtu < 0)
@@ -332,8 +333,7 @@ void PhyWin(bool *active)
     if (ImGui::InputText("Filter File", ftr_fname, IM_ARRAYSIZE(ftr_fname), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         char buf[256];
-        memcpy(buf, ftr_fname, 255);
-        buf[255] = '\0';
+        snprintf(buf, 256, "/home/sunip/%s", ftr_fname);
         if (access(ftr_fname, F_OK | R_OK))
         {
             snprintf(ftr_fname, IM_ARRAYSIZE(ftr_fname), "Invalid file %s", buf);
