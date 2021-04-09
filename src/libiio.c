@@ -218,16 +218,12 @@ int adradio_get_ensm_mode(adradio_t *dev, char *buf, ssize_t len)
 
 int adradio_enable_fir(adradio_t *dev, bool cond)
 {
-        return iio_channel_attr_write_bool(dev->tx_iq, "filter_fir_en", cond) & iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", cond);
+        return iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", cond);
 }
 
 int adradio_check_fir(adradio_t *dev, bool *cond)
 {
-    bool res1, res2;
-    int status = iio_channel_attr_read_bool(dev->tx_iq, "filter_fir_en", &res1);
-    status &= iio_channel_attr_read_bool(dev->rx_iq, "filter_fir_en", &res2);
-    *cond = (res1 & res2);
-    return EXIT_FAILURE;
+    return iio_channel_attr_read_bool(dev->rx_iq, "filter_fir_en", cond);
 }
 
 static bool check_file(const char *fname)
@@ -257,12 +253,6 @@ int adradio_load_fir(adradio_t *dev, const char *fname)
     if (ret != EXIT_SUCCESS)
     {
         eprintf("%s: Could not disable RX FIR filter for application, exiting...\n", __func__);
-        return ret;
-    }
-    ret = iio_channel_attr_write_bool(dev->tx_iq, "filter_fir_en", false);
-    if (ret != EXIT_SUCCESS)
-    {
-        eprintf("%s: Could not disable TX FIR filter for application, exiting...\n", __func__);
         return ret;
     }
     if (!check_file(fname))
