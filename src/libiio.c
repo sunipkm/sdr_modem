@@ -250,8 +250,19 @@ int adradio_get_ensm_mode(adradio_t *dev, char *buf, ssize_t len)
 
 int adradio_enable_fir(adradio_t *dev, bool cond)
 {
-#ifndef LIBIIO_FTR_FILE
-    return iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", cond);
+#ifndef LIBIIO_FTR_FIL
+    int ret = 0;
+    if (cond)
+    {
+        ret = iio_channel_attr_write_bool(dev->tx_iq, "filter_fir_en", cond);
+        ret |= iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", cond);
+    }
+    else
+    {
+        ret = iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", cond);
+        ret |= iio_channel_attr_write_bool(dev->tx_iq, "filter_fir_en", cond);
+    }
+    return ret;
 #else
     int _cond = cond;
     if (fprintf(fp, "%d", &_cond) != 1)
@@ -268,7 +279,7 @@ int adradio_check_fir(adradio_t *dev, bool *cond)
     int _cond;
     if (fscanf(fp, "%d", &_cond) < 0)
         return EXIT_FAILURE;
-    *cond = (bool) _cond;
+    *cond = (bool)_cond;
     return EXIT_SUCCESS;
 #endif
 }
@@ -298,6 +309,7 @@ int adradio_load_fir(adradio_t *dev, const char *fname)
     }
 #ifndef LIBIIO_FTR_FILE
     ret = iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", false);
+    ret |= iio_channel_attr_write_bool(dev->tx_iq, "filter_fir_en", false);
     if (ret != EXIT_SUCCESS)
     {
         eprintf("%s: Could not disable RX FIR filter for application, exiting...\n", __func__);
