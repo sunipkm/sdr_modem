@@ -35,17 +35,17 @@ int adradio_init(adradio_t *dev)
         return EXIT_FAILURE;
     }
     // try to open ad9361-phy device
-    dev->ad_phy = iio_context_find_device(dev->ctx, "ad9361-phy");
+    dev->ad_phy = iio_context_find_device(dev->ctx, ADRADIO_PHY_DEVICE);
     if (dev->ad_phy == NULL)
     {
-        eprintf("%s: Could not find ad9361-phy, exiting...", __func__);
+        eprintf("%s: Could not find " ADRADIO_PHY_DEVICE ", exiting...", __func__);
         goto exit_failure_ctx;
     }
     // try to open cf-ad9361-dds-core-lpc
-    dev->dds_lpc = iio_context_find_device(dev->ctx, "cf-ad9361-dds-core-lpc");
+    dev->dds_lpc = iio_context_find_device(dev->ctx, ADRADIO_DDS_DEVICE);
     if (dev->ad_phy == NULL)
     {
-        eprintf("%s: Could not find cf-ad9361-dds-core-lpc, exiting...", __func__);
+        eprintf("%s: Could not find " ADRADIO_DDS_DEVICE ", exiting...", __func__);
         goto exit_failure_ctx;
     }
     // try to open the TX LO channel
@@ -85,8 +85,36 @@ int adradio_init(adradio_t *dev)
     }
     if (adradio_reconfigure_dds(dev) != EXIT_SUCCESS)
         goto exit_failure_tempsensor;
-    else
-        return EXIT_SUCCESS;
+#ifdef LIBIIO_FTR_FILE
+    char buf[128];
+    int devid = -1; // temp
+    for (int i = 0; i < ADRADIO_MAX_DEVICE_ID; i++)
+    {
+        snprintf(buf, 128, "/sys/bus/iio/devices/iio:device%d/name", i);
+        FILE *fp = fopen(buf, "r");
+        if (fp == NULL)
+        {
+            eprintf("%s: Could not open file %s\n", __func__, buf);
+            continue;
+        }
+        fscanf(fp, "%s", buf); // copy the string to buf
+        if (strncmp(buf, ADRADIO_PHY_DEVICE, strlen(ADRADIO_PHY_DEVICE)) == 0)
+        {
+            devid = i;
+            i = ADRADIO_MAX_DEVICE_ID; // break out of loop
+        }
+        fclose(fp);
+    }
+    snprintf(buf, 128, "/sys/bus/iio/devices/iio:device%d/filter_fir_config", devid);
+    dev->ftr_config_fp = fopen(buf, "w");
+    if (dev->ftr_config_fp == NULL)
+        goto exit_failure_tempsensor;
+    snprintf(buf, 128, "/sys/bus/iio/devices/iio:device%d/in_out_voltage_filter_en", devid);
+    dev->ftr_en_fp = fopen(buf, "w");
+    if (dev->ftr_en_fp == NULL)
+        goto exit_failure_tempsensor;
+#endif
+    return EXIT_SUCCESS;
 exit_failure_tempsensor:
     iio_channel_disable(dev->temp);
 exit_failure_rx_iq:
@@ -112,6 +140,10 @@ void adradio_destroy(adradio_t *dev)
     iio_channel_disable(dev->tx_lo);
     iio_channel_disable(dev->temp);
     iio_context_destroy(dev->ctx);
+#ifdef LIBIIO_FTR_FILE
+    fclose(dev->ftr_en_fp);
+    fclose(dev->ftr_config_fp);
+#endif
 }
 
 int adradio_set_tx_lo(adradio_t *dev, long long freq)
@@ -218,12 +250,27 @@ int adradio_get_ensm_mode(adradio_t *dev, char *buf, ssize_t len)
 
 int adradio_enable_fir(adradio_t *dev, bool cond)
 {
-        return iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", cond);
+#ifndef LIBIIO_FTR_FILE
+    return iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", cond);
+#else
+    int _cond = cond;
+    if (fprintf(fp, "%d", &_cond) != 1)
+        return EXIT_FAILURE;
+    return EXIT_SUCCESS;
+#endif
 }
 
 int adradio_check_fir(adradio_t *dev, bool *cond)
 {
+#ifndef LIBIIO_FTR_FILE
     return iio_channel_attr_read_bool(dev->rx_iq, "filter_fir_en", cond);
+#else
+    int _cond;
+    if (fscanf(fp, "%d", &_cond) < 0)
+        return EXIT_FAILURE;
+    *cond = (bool) _cond;
+    return EXIT_SUCCESS;
+#endif
 }
 
 static bool check_file(const char *fname)
@@ -233,7 +280,7 @@ static bool check_file(const char *fname)
     ret = stat(fname, &s);
     if (ret)
         return false;
-    return (bool) S_ISREG(s.st_mode);
+    return (bool)S_ISREG(s.st_mode);
 }
 
 int adradio_load_fir(adradio_t *dev, const char *fname)
@@ -249,12 +296,22 @@ int adradio_load_fir(adradio_t *dev, const char *fname)
         eprintf("%s: Device not allocated, fatal error!\n", __func__);
         return EXIT_FAILURE;
     }
+#ifndef LIBIIO_FTR_FILE
     ret = iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", false);
     if (ret != EXIT_SUCCESS)
     {
         eprintf("%s: Could not disable RX FIR filter for application, exiting...\n", __func__);
         return ret;
     }
+#else
+    char buf_dis[] = "0";
+    ret = fprintf(dev->ftr_en_fp, "%s", buf_dis);
+    if (ret != strlen(buf_dis))
+    {
+        eprintf("%s: Could not disable RX FIR filter for application, exiting...\n", __func__);
+        return EXIT_FAILURE;
+    }
+#endif
     if (!check_file(fname))
     {
         eprintf("%s: %s is not a regular file or does not exist\n", __func__, fname);
@@ -297,7 +354,11 @@ int adradio_load_fir(adradio_t *dev, const char *fname)
         eprintf("%c", buf[i]);
     eprintf("--EOF--");
 #endif
+#ifndef LIBIIO_FTR_FILE
     ret = iio_device_attr_write_raw(dev->ad_phy, "filter_fir_config", buf, rdsize);
+#else
+    ret = fwrite(buf, 0x1, rdsize, dev->ftr_config_fp);
+#endif
     if (ret != rdsize)
     {
         eprintf("%s: Could not load FIR filter config into PHY\n", __func__);

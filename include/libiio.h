@@ -49,16 +49,25 @@ extern "C"
         const char *rfport; // Port name
     } ad_stream_cfg;
 
+    #define ADRADIO_MAX_DEVICE_ID 10
+
+    #define ADRADIO_PHY_DEVICE "ad9361-phy"
+    #define ADRADIO_DDS_DEVICE "cf-ad9361-dds-core-lpc"
+
     typedef struct
     {
-        struct iio_context *ctx; /// IIO Context
-        struct iio_device *ad_phy; /// AD9361-Phy device
+#ifdef LIBIIO_FTR_FILE
+        FILE *ftr_en_fp;                  /// Device ID for ad9361-phy in /sys/bus/iio/devices/iio\:device%d/name
+        FILE *ftr_config_fp; /// FIR filter config
+#endif
+        struct iio_context *ctx;    /// IIO Context
+        struct iio_device *ad_phy;  /// AD9361-Phy device
         struct iio_device *dds_lpc; /// CF-DDS-LPC-CORE device
-        struct iio_channel *temp; /// Temperature channel
-        struct iio_channel *tx_lo; /// TX Carrier
-        struct iio_channel *rx_lo; /// RX Carrier
-        struct iio_channel *tx_iq; /// TX IQ
-        struct iio_channel *rx_iq; /// RX IQ
+        struct iio_channel *temp;   /// Temperature channel
+        struct iio_channel *tx_lo;  /// TX Carrier
+        struct iio_channel *rx_lo;  /// RX Carrier
+        struct iio_channel *tx_iq;  /// TX IQ
+        struct iio_channel *rx_iq;  /// RX IQ
     } adradio_t;
 
     /**
