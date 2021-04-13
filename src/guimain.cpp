@@ -325,7 +325,7 @@ void PhyWin(bool *active)
     if (ImGui::Button("Load Filter"))
     {
         char buf[256];
-        snprintf(buf, 256, "/home/sunip/%s", ftr_fname);
+        snprintf(buf, 256, "/home/sunip/%s.ftr", ftr_fname);
         if (adradio_load_fir(phy, buf) == EXIT_FAILURE)
         {
             snprintf(ftr_fname, IM_ARRAYSIZE(ftr_fname), "Could not load %s", buf);

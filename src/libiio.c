@@ -352,7 +352,7 @@ int adradio_load_fir(adradio_t *dev, const char *fname)
     eprintf("FIR Filter Contents: ");
     for (ssize_t i = 0; i < rdsize; i++)
         eprintf("%c", buf[i]);
-    eprintf("--EOF--");
+    eprintf("--EOF--\n");
 #endif
 #ifndef LIBIIO_FTR_FILE
     ret = iio_device_attr_write_raw(dev->ad_phy, "filter_fir_config", buf, rdsize);
