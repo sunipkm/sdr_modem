@@ -60,11 +60,11 @@ char rx_buf[RX_BUF_SIZE];
 ssize_t rx_buf_sz = 1;
 pthread_mutex_t rx_buf_access[1];
 
+rxmodem rxdev[1];
 void *rx_thread_fcn(void *tid)
 {
     static int retval;
-    rxmodem dev[1];
-    if (rxmodem_init(dev, uio_get_id("rx_ipcore"), uio_get_id("rx_dma")) < 0)
+    if (rxmodem_init(rxdev, uio_get_id("rx_ipcore"), uio_get_id("rx_dma")) < 0)
     {
         memset(rx_buf, 0x0, RX_BUF_SIZE);
         rx_buf_sz = snprintf(rx_buf, RX_BUF_SIZE, "%s: Could not initialize RX Modem with uio devices %d and %d", __func__, uio_get_id("rx_ipcore"), uio_get_id("rx_dma"));
@@ -76,7 +76,7 @@ void *rx_thread_fcn(void *tid)
     {
         if (show_chat_win)
         {
-            ssize_t rcv_sz = rxmodem_receive(dev);
+            ssize_t rcv_sz = rxmodem_receive(rxdev);
             if (rcv_sz <= 0)
             {
                 pthread_mutex_lock(rx_buf_access);
@@ -87,7 +87,7 @@ void *rx_thread_fcn(void *tid)
             }
             char *buf = (char *)malloc(rcv_sz);
             memset(buf, 0x0, rcv_sz);
-            ssize_t rd_sz = rxmodem_read(dev, buf, rcv_sz);
+            ssize_t rd_sz = rxmodem_read(rxdev, (uint8_t *) buf, rcv_sz);
             pthread_mutex_lock(rx_buf_access);
             memset(rx_buf, 0x0, RX_BUF_SIZE);
             snprintf(rx_buf, rd_sz, "%s", buf);
@@ -107,7 +107,6 @@ void *rx_thread_fcn(void *tid)
             usleep(16000); // 60 Hz
         }
     }
-    rxmodem_destroy(dev);
 err:
     return &retval;
 }
@@ -124,6 +123,7 @@ void ChatWin(bool *active)
     time_t rawtime;
     static struct tm *timeinfo;
     static int mtu = 0;
+    static int fr_loop_idx = 40;
     if (firstRun)
     {
         snprintf(tmptxbuf, 4000, "Testing...");
@@ -134,7 +134,14 @@ void ChatWin(bool *active)
     pthread_mutex_lock(rx_buf_access);
     ImGui::TextWrapped("Received: %s", rx_buf);
     pthread_mutex_unlock(rx_buf_access);
-    ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.4);
+    if (ImGui::InputInt("FR Loop BW", &fr_loop_idx, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
+    {
+        if (fr_loop_idx < 0 || fr_loop_idx > 127)
+            fr_loop_idx = 40;
+        rxdev->conf->fr_loop_bw = fr_loop_idx;
+        rxmodem_reset(rxdev, rxdev->conf);
+    }
+    ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.45);
     ImGui::InputTextMultiline("To Send", tmptxbuf, 4000, ImVec2(ImGui::GetWindowWidth() - 100, ImGui::GetWindowHeight() * 0.4 - 20), ImGuiInputTextFlags_AutoSelectAll);
     ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.8);
     if (ImGui::InputInt("MTU", &mtu, 0, 0, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
@@ -485,6 +492,7 @@ int main(int, char **)
     done = 1;
     pthread_cancel(rxthread);
     txmodem_destroy(txdev);
+    rxmodem_destroy(rxdev);
 #endif
     adradio_destroy(phy);
     return 0;
