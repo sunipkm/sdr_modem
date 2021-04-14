@@ -307,6 +307,11 @@ int adradio_load_fir(adradio_t *dev, const char *fname)
         eprintf("%s: Device not allocated, fatal error!\n", __func__);
         return EXIT_FAILURE;
     }
+    if (adradio_set_samp(dev, MHZ(10)) == EXIT_FAILURE)
+    {
+        eprintf("%s: Could not set sample rate to default!\n", __func__);
+        return EXIT_FAILURE;
+    }
 #ifndef LIBIIO_FTR_FILE
     ret = iio_channel_attr_write_bool(dev->rx_iq, "filter_fir_en", false);
     ret |= iio_channel_attr_write_bool(dev->tx_iq, "filter_fir_en", false);
