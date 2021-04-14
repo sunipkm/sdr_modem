@@ -134,6 +134,7 @@ void ChatWin(bool *active)
     pthread_mutex_lock(rx_buf_access);
     ImGui::TextWrapped("Received: %s", rx_buf);
     pthread_mutex_unlock(rx_buf_access);
+    ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.4);
     if (ImGui::InputInt("FR Loop BW", &fr_loop_idx, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
     {
         if (fr_loop_idx < 0 || fr_loop_idx > 127)
@@ -141,9 +142,9 @@ void ChatWin(bool *active)
         rxdev->conf->fr_loop_bw = fr_loop_idx;
         rxmodem_reset(rxdev, rxdev->conf);
     }
-    ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.45);
+    ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.5);
     ImGui::InputTextMultiline("To Send", tmptxbuf, 4000, ImVec2(ImGui::GetWindowWidth() - 100, ImGui::GetWindowHeight() * 0.4 - 20), ImGuiInputTextFlags_AutoSelectAll);
-    ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.8);
+    ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.9);
     if (ImGui::InputInt("MTU", &mtu, 0, 0, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         if (mtu < 0)
