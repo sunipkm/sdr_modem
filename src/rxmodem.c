@@ -369,7 +369,7 @@ ssize_t rxmodem_receive(rxmodem *dev)
         retcode = RX_NUM_FRAMES_ZERO;
         goto rxmodem_receive_end;
     }
-    else if (frame_hdr->frame_sz == 0)
+    else if (frame_hdr->frame_sz == 0 || frame_hdr->frame_sz > TXRX_MTU_MAX)
     {
         eprintf("%s: Invalid start frame size!\n", __func__);
         dev->rx_done = 1;
@@ -459,12 +459,12 @@ ssize_t rxmodem_read(rxmodem *dev, uint8_t *buf, ssize_t size)
                     valid_read += frame_hdr->frame_sz;
                 else
                 {
-                    eprintf("%s: Valid CRC = 0x%x, Calculated CRC = 0x%x\n", __func__, frame_hdr->frame_crc, crcval);
+                    eprintf("%s: Loop %d: Valid CRC = 0x%x, Calculated CRC = 0x%x\n", __func__, i, frame_hdr->frame_crc, crcval);
                 }
             }
             else
             {
-                eprintf("%s: CRC invalid in frame header\n", __func__);
+                eprintf("%s: Loop %d: CRC invalid in frame header\n", __func__, i);
             }
             total_read += frame_hdr->frame_sz;
         }

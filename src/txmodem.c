@@ -66,7 +66,7 @@ int txmodem_write(txmodem *dev, uint8_t *buf, ssize_t size)
         eprintf("%s: Data buffer size less than 0: %d\n", __func__, size);
         return -1;
     }
-    if (dev->mtu == 0 || dev->mtu < TXRX_MTU_MIN) // MTU not set or too small, revert to default
+    if (dev->mtu == 0 || dev->mtu < TXRX_MTU_MIN || dev->mtu > TXRX_MTU_MAX) // MTU not set or too small or too large, revert to default
     {
         // dev->mtu = 4072 - sizeof(modem_frame_header_t);
         dev->mtu = DEFAULT_FRAME_SZ - sizeof(modem_frame_header_t) - FRAME_PADDING * sizeof(uint64_t); // padding

@@ -39,6 +39,12 @@
 #define TXRX_MTU_MIN 10 * sizeof(uint64_t) + FRAME_PADDING * sizeof(uint64_t) + sizeof(modem_frame_header_t)
 
 /**
+ * @brief TXRX_MTU_MAX sets the maximum MTU of the radio. If frame size is larger than this, the data may be corrupted.
+ * 
+ */
+#define TXRX_MTU_MAX 6144 - FRAME_PADDING * sizeof(uint64_t) - sizeof(modem_frame_header_t)
+
+/**
  * @brief PACKET_GUID is the unique ID for space hauc, it is the bottom 32 bits of M_PI
  * declared in math.h (which is a double precision floating point number).
  * M_PI == 0x00000001 6f35b7e0
