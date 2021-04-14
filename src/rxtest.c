@@ -18,11 +18,24 @@ int sighandler(int sig)
 
 int main(int argc, char *argv[])
 {
+    if (argc == 1)
+    {
+        printf("You can pass FR Loop Bandwidth as a number between 0 and 127 as a command line parameter\n");
+    }
     signal(SIGINT | SIGHUP, &sighandler);
     printf("Starting program, press Ctrl + C to exit\n");
     rxmodem dev[1];
     if (rxmodem_init(dev, uio_get_id("rx_ipcore"), uio_get_id("rx_dma")) < 0)
         return -1;
+    if (argc > 1)
+    {
+        int fr_loop_idx = atoi(argv[1]);
+        printf("FR Loop BW index provided: %d, ", fr_loop_idx);
+        if (fr_loop_idx < 0 || fr_loop_idx > 127)
+            fr_loop_idx = 40; // default
+        dev->conf->fr_loop_bw = fr_loop_idx;
+        printf("FR Loop BW index set: %d\n", dev->conf->fr_loop_bw);
+    }
     rxmodem_reset(dev, dev->conf);
     while (!done)
     {

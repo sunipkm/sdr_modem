@@ -145,7 +145,7 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
     /* Save default settings for RX IP */
-    dev->conf->fr_loop_bw = 40;
+    dev->conf->fr_loop_bw = 40; /* int8_t, BW = (k + 1)/100 */
     dev->conf->eqmu = 200;
     dev->conf->scopesel = 2;
     dev->conf->pd_threshold = 10;
@@ -487,17 +487,17 @@ int rxmodem_reset(rxmodem *dev, rxmodem_conf_t *conf)
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
     // usleep(10000);
-    uio_write(dev->bus, RXMODEM_FR_LOOP_BW, 40);
+    uio_write(dev->bus, RXMODEM_FR_LOOP_BW, conf->fr_loop_bw);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
     // usleep(10000);
-    uio_write(dev->bus, RXMODEM_EQ_MU, 200);
+    uio_write(dev->bus, RXMODEM_EQ_MU, conf->eqmu);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
     // usleep(10000);
-    uio_write(dev->bus, RXMODEM_BYPASS_EQ, 0);
+    uio_write(dev->bus, RXMODEM_BYPASS_EQ, conf->eq_bypass);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
@@ -507,7 +507,7 @@ int rxmodem_reset(rxmodem *dev, rxmodem_conf_t *conf)
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
     // usleep(10000);
-    uio_write(dev->bus, RXMODEM_PD_THRESHOLD, 10);
+    uio_write(dev->bus, RXMODEM_PD_THRESHOLD, conf->pd_threshold);
 #ifdef RXDEBUG
     eprintf("%s: %d\n", __func__, __LINE__);
 #endif
