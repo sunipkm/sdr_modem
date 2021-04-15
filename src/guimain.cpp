@@ -141,6 +141,7 @@ void ChatWin(bool *active)
             fr_loop_idx = 40;
         rxdev->conf->fr_loop_bw = fr_loop_idx;
         rxmodem_reset(rxdev, rxdev->conf);
+        rxmodem_start(rxdev);
     }
     ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.5);
     ImGui::InputTextMultiline("To Send", tmptxbuf, 4000, ImVec2(ImGui::GetWindowWidth() - 100, ImGui::GetWindowHeight() * 0.4 - 20), ImGuiInputTextFlags_AutoSelectAll);
