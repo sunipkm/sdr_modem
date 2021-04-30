@@ -567,14 +567,12 @@ int rxmodem_enable_ext_fr(rxmodem *dev, float loop_bw, float damping, float gain
     eprintf("Loop BW: %f Damping: %f Gain: %f\n"
             "T: %f d: %f\n"
             "K1: %f K2: %f\n"
-            "K1: %s K2: %s\n"
-            "Damping: %s",
             loop_bw, damping, gain,
             theta, d,
-            k1, k2,
-            print_bits(dev->conf->ext_fr_k1, 16),
-            print_bits(dev->conf->ext_fr_k2, 16),
-            print_bits(dev->conf->ext_fr_gain, 16));
+            k1, k2);
+    eprintf("K1: %s", print_bits(dev->conf->ext_fr_k1, 16));
+    eprintf("K2: %s", print_bits(dev->conf->ext_fr_k2, 16));
+    eprintf("Gain: %s", print_bits(dev->conf->ext_fr_gain, 16));
 #endif
 
     return rxmodem_reset(dev, dev->conf); 
