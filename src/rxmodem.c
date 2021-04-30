@@ -560,8 +560,8 @@ int rxmodem_enable_ext_fr(rxmodem *dev, float loop_bw, float damping, float gain
 
     dev->conf->ext_fr_k1 = convert_ufixdt(k1, 16, 15);
     dev->conf->ext_fr_k2 = convert_ufixdt(k2, 16, 15);
-    dev->conf->ext_fr_gain = convert_ufixdt(gain, 16, 15);
-    dev->conf->ext_fr_en = 1;
+    dev->conf->ext_fr_gain = convert_sfixdt(gain, 25, 20);
+    dev->conf->ext_fr_en = 0x1;
 
 #ifdef RXDEBUG
     eprintf("Loop BW: %f Damping: %f Gain: %f\n"
