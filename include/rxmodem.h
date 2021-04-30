@@ -180,76 +180,18 @@ static inline int fsgn(float f)
     return f < 0 ? -1 : (f > 0 ? 1 : 0);
 }
 
-static inline uint32_t convert_sfixdt(float num, int tot_bits, int frac_bits)
-{
-    if (tot_bits == 0)
-        return 0;
-    if (num == 0)
-        return 0;
-    if (tot_bits < frac_bits)
-    {
-        eprintf("Total number of bits %d < fractional bits %d", tot_bits, frac_bits);
-        return 0;
-    }
-    // check boundaries
-    int max_int_bits = tot_bits - frac_bits - 1;
-    while(max_int_bits < 0)
-    {
-        frac_bits--;
-        max_int_bits = tot_bits - frac_bits - 1;
-    }
-    int max_chk_bits = max_int_bits < 1 ? 1 : max_int_bits;
-    int sgn = fsgn(num);
-    float num_ = fabs(num);
-    if (num_ >= ((0x1 << (max_chk_bits - 1))))
-    {
-        return sgn > 0 ? (0x1 << (tot_bits - 1)) - 1 : 0x1 << (tot_bits - 1);
-    }
-    uint32_t out = 0;
-    out |= ((int) num_) << frac_bits;
-    num_ -= ((int) num_);
-    for (int i = 0; frac_bits > 0; i++)
-    {
-        frac_bits--;
-        num_ *= 2;
-        if (num_ > 1)
-        {
-            num_ -= 1;
-            out |= 0x1 << frac_bits;
-        }
-    }
-    if (sgn == -1)
-    {
-        out = ~out;
-        out += 1; // 2's complement
-    }
-    return out;
-}
-
 static inline uint32_t convert_ufixdt(float num, int tot_bits, int frac_bits)
 {
+    // check the obvious
     if (tot_bits == 0)
         return 0;
     if (num <= 0)
         return 0;
-    if (tot_bits < frac_bits)
-    {
-        eprintf("Total number of bits %d < fractional bits %d", tot_bits, frac_bits);
-        return 0;
-    }
     // check boundaries
     int max_int_bits = tot_bits - frac_bits;
-    while(max_int_bits < 0)
-    {
-        frac_bits--;
-        max_int_bits = tot_bits - frac_bits;
-    }
-    int max_chk_bits = max_int_bits < 2 ? 2 : max_int_bits;
-    if (num >= ((0x1 << (max_chk_bits - 1))))
-    {
+    if (!(num < pow(2.0, max_int_bits)))
         return 0xffffffff;
-    }
-    uint32_t out = 0;
+    uint32_t out = 0, mask = 0;
     out |= ((int) num) << frac_bits;
     num -= ((int) num);
     for (int i = 0; frac_bits > 0; i++)
@@ -262,7 +204,47 @@ static inline uint32_t convert_ufixdt(float num, int tot_bits, int frac_bits)
             out |= 0x1 << frac_bits;
         }
     }
-    return out;
+    // mask all bits but tot_bits
+    while(tot_bits--)
+    {
+        mask <<= 1;
+        mask |= 0x1;
+    }
+    return (out & mask);
+}
+
+static inline uint32_t convert_sfixdt(float num, int tot_bits, int frac_bits)
+{
+    if (tot_bits == 0)
+        return 0;
+    if (num == 0)
+        return 0;
+    // create unsigned versions
+    int sgn = fsgn(num);
+    float num_ = fabs(num);
+    int max_int_bits = tot_bits - frac_bits;
+    uint32_t out = 0, mask = 0;
+    if (num_ >= pow(2, max_int_bits - 1))
+    {
+        if (sgn == -1)
+            out = 0x1 << tot_bits - 1;
+        else
+            out = ~(0x1 << tot_bits - 1);
+        return out;
+    }
+    out = convert_ufixdt(num_, tot_bits, frac_bits); // create the unsigned portion
+    if (sgn == -1)
+    {
+        out = ~out;
+        out += 1; // 2's complement
+    }
+    // mask all bits but tot_bits
+    while(tot_bits--)
+    {
+        mask <<= 1;
+        mask |= 0x1;
+    }
+    return (out & mask);
 }
 
 #ifdef __cplusplus

@@ -558,8 +558,17 @@ int rxmodem_enable_ext_fr(rxmodem *dev, float loop_bw, float damping, float gain
     float k1 = (4 * damping * theta / d);
     float k2 = theta * theta / d;
 
+    if (k1 > 2)
+    {
+        eprintf("K1 %f exceeds 2, which is the max allowed value for ufix16_En15", k1);
+    }
+    if (k2 > pow(2, -3))
+    {
+        eprintf("K2 %f exceeds %d, which is the max allowed value for ufix16_En15", k2, pow(2, -3));
+    }
+
     dev->conf->ext_fr_k1 = convert_ufixdt(k1, 16, 15);
-    dev->conf->ext_fr_k2 = convert_ufixdt(k2, 16, 15);
+    dev->conf->ext_fr_k2 = convert_ufixdt(k2, 16, 19);
     dev->conf->ext_fr_gain = convert_sfixdt(gain, 25, 20);
     dev->conf->ext_fr_en = 0x1;
 
