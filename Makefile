@@ -78,6 +78,9 @@ $(RXTARGET): $(COBJS) $(RXOBJS)
 $(LIBTARGET): imgui
 	cd imgui && make && cd ..
 
+fixdt:
+	$(CC) -o $@.out -O2 -I include/ src/test_fixdt.c -lm
+
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
 %.o: %.c

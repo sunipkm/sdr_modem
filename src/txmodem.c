@@ -14,6 +14,7 @@
 #include "txmodem.h"
 #include "txrx_packdef.h"
 #include <string.h>
+#include <unistd.h>
 
 int txmodem_init(txmodem *dev, int txmodem_id, int txdma_id)
 {

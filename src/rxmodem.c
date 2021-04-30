@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "libfixdt.h"
 #define _POSIX_C_SOURCE 199309L
 #include <time.h>
 #include <errno.h>
@@ -140,6 +141,7 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
 #ifdef RXDEBUG
     eprintf();
 #endif
+    memset(dev->conf, 0x0, sizeof(rxmodem_conf_t));
     /* Save default settings for RX IP */
     dev->conf->fr_loop_bw = 40; /* int8_t, BW = (k + 1)/100 */
     dev->conf->eqmu = 200;
