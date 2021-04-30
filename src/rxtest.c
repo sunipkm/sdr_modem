@@ -43,6 +43,10 @@ int main(int argc, char *argv[])
             rxmodem_destroy(dev);
             return 0;
         }
+        else
+        {
+            printf("Entered %f %f %f, exiting\n", loop_bw, damp, gain);
+        }
         rxmodem_enable_ext_fr(dev, loop_bw, damp, gain);
     }
     rxmodem_reset(dev, dev->conf);
@@ -77,6 +81,10 @@ int main(int argc, char *argv[])
 #endif
         printf("\n");
         free(buf);
+    }
+    if (argc == 4)
+    {
+        rxmodem_disable_ext_fr(dev);
     }
     rxmodem_destroy(dev);
     return 0;
