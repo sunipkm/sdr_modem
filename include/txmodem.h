@@ -16,6 +16,11 @@
 extern "C" {
 #endif
 
+#include <stdio.h>
+#define eprintf(str, ...) \
+    fprintf(stderr, "%s, %d: " str "\n", __func__, __LINE__, ##__VA_ARGS__); \
+    fflush(stderr)
+
 #include "libuio.h"
 #include "adidma.h"
 #include <pthread.h>

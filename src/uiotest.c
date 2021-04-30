@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
         printf("Invocation: ./uio.out <UIO Device Number>\n\n");
         return 0;
     }
-    signal(SIGINT, sighandler);
+    signal(SIGINT, &sighandler);
     int uio_id = atoi(argv[1]);
     printf("UIO ID: %d\n", uio_id);
     uio_dev dev[1];

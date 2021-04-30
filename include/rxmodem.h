@@ -20,9 +20,15 @@ extern "C" {
 #include "adidma.h"
 #include <pthread.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <math.h>
 #include "txrx_packdef.h"
 
 #define NUM_IRQ_RETRIES 1
+
+#define eprintf(str, ...) \
+    fprintf(stderr, "%s, %d: " str "\n", __func__, __LINE__, ##__VA_ARGS__); \
+    fflush(stderr)
 
 typedef enum
 {
@@ -33,7 +39,11 @@ typedef enum
     RXMODEM_RX_ENABLE = 0x10c,     /// Enable Decode: 1 to start radio, 0 to stop radio
     RXMODEM_BYPASS_CODING = 0x110, /// Enable coding bypass: 0
     RXMODEM_BYPASS_EQ = 0x114,     /// Enable bypass eq: 0
-    RXMODEM_PAYLOAD_LEN = 0x134    /// Read register for payload length
+    RXMODEM_PAYLOAD_LEN = 0x134,   /// Read register for payload length
+    RXMODEM_EXT_FR_EN = 0x200,     /// Enable external FR loop coefficients
+    RXMODEM_EXT_FR_K1 = 0x204,     /// External K1 coefficient
+    RXMODEM_EXT_FR_K2 = 0x208,     /// External K2 coefficient
+    RXMODEM_EXT_FR_GAIN = 0x20c,   /// External FR loop gain
 
     // RXMODEM_RESET = 0x0,          /// Reset the entire IP
     // RXMODEM_RX_ENABLE = 0x118,    /// Enable RX. Default: 0, Receive: 1
@@ -75,6 +85,10 @@ typedef struct
     int scopesel;
     int eq_bypass;
     int pd_threshold;
+    int ext_fr_en;
+    int ext_fr_k1;
+    int ext_fr_k2;
+    int ext_fr_gain;
 } rxmodem_conf_t;
 
 typedef struct
@@ -88,7 +102,6 @@ typedef struct
     int read_done;                     /// indicate read has been done
     int rx_done;                       /// Indicates thr to finish
     int frame_num;                     /// Length of frames on buffer (read up to this offset)
-    modem_frame_header_t frame_hdr[1]; /// Frame header stored for checking
     size_t max_pack_sz;
 } rxmodem;
 
@@ -147,6 +160,110 @@ ssize_t rxmodem_read(rxmodem *dev, uint8_t *buf, ssize_t size);
  * @param dev rxmodem struct to describe the device
  */
 void rxmodem_destroy(rxmodem *dev);
+/**
+ * @brief Calculate coefficients and enable External Frequency Recovery Loop coefficients
+ * 
+ * @param dev rxmodem struct to describe the device
+ * @return int Positive on success, negative on failure
+ */
+int rxmodem_enable_ext_fr(rxmodem *dev, float loop_bw, float damping, float gain);
+/**
+ * @brief Disable external frequency recovery loop
+ * 
+ * @param dev rxmodem struct to describe the device
+ * @return int Positive on success, negative on failure
+ */
+int rxmodem_disable_ext_fr(rxmodem *dev);
+
+static inline int fsgn(float f)
+{
+    return f < 0 ? -1 : (f > 0 ? 1 : 0);
+}
+
+static inline uint32_t convert_sfixdt(float num, int tot_bits, int frac_bits)
+{
+    if (tot_bits == 0)
+        return 0;
+    if (num == 0)
+        return 0;
+    if (tot_bits < frac_bits)
+    {
+        eprintf("Total number of bits %d < fractional bits %d", tot_bits, frac_bits);
+        return 0;
+    }
+    // check boundaries
+    int max_int_bits = tot_bits - frac_bits - 1;
+    while(max_int_bits < 0)
+    {
+        frac_bits--;
+        max_int_bits = tot_bits - frac_bits - 1;
+    }
+    int max_chk_bits = max_int_bits < 1 ? 1 : max_int_bits;
+    int sgn = fsgn(num);
+    float num_ = fabs(num);
+    if (num_ >= ((0x1 << (max_chk_bits - 1))))
+    {
+        return sgn > 0 ? (0x1 << (tot_bits - 1)) - 1 : 0x1 << (tot_bits - 1);
+    }
+    uint32_t out = 0;
+    out |= ((int) num_) << frac_bits;
+    num_ -= ((int) num_);
+    for (int i = 0; frac_bits > 0; i++)
+    {
+        frac_bits--;
+        num_ *= 2;
+        if (num_ > 1)
+        {
+            num_ -= 1;
+            out |= 0x1 << frac_bits;
+        }
+    }
+    if (sgn == -1)
+    {
+        out = ~out;
+        out += 1; // 2's complement
+    }
+    return out;
+}
+
+static inline uint32_t convert_ufixdt(float num, int tot_bits, int frac_bits)
+{
+    if (tot_bits == 0)
+        return 0;
+    if (num <= 0)
+        return 0;
+    if (tot_bits < frac_bits)
+    {
+        eprintf("Total number of bits %d < fractional bits %d", tot_bits, frac_bits);
+        return 0;
+    }
+    // check boundaries
+    int max_int_bits = tot_bits - frac_bits;
+    while(max_int_bits < 0)
+    {
+        frac_bits--;
+        max_int_bits = tot_bits - frac_bits;
+    }
+    int max_chk_bits = max_int_bits < 2 ? 2 : max_int_bits;
+    if (num >= ((0x1 << (max_chk_bits - 1))))
+    {
+        return 0xffffffff;
+    }
+    uint32_t out = 0;
+    out |= ((int) num) << frac_bits;
+    num -= ((int) num);
+    for (int i = 0; frac_bits > 0; i++)
+    {
+        frac_bits--;
+        num *= 2;
+        if (num > 1)
+        {
+            num -= 1;
+            out |= 0x1 << frac_bits;
+        }
+    }
+    return out;
+}
 
 #ifdef __cplusplus
 }

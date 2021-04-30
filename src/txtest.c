@@ -6,12 +6,8 @@
 #include <signal.h>
 #include "txmodem.h"
 
-#define eprintf(...)              \
-    fprintf(stderr, __VA_ARGS__); \
-    fflush(stderr)
-
 volatile sig_atomic_t done = 0;
-int sighandler(int sig)
+void sighandler(int sig)
 {
     done = 1;
 }
