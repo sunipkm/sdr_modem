@@ -35,6 +35,88 @@ enum MES_CLK_REGS
     MES_CLK_DBG_MESCLK = 0x308
 };
 
+#define eprintf(str, ...) \
+    fprintf(stderr, "%s, %d: " str "\n", __func__, __LINE__, ##__VA_ARGS__); \
+    fflush(stderr)
+
+#include <stdlib.h>
+
+#define MES_CLK_IPCORE_RST "991"
+#define MES_CLK_IPCORE_RST_TOUT 1000 // 1 ms
+static int mesclk_ipcore_rst()
+{
+    FILE *fp;
+    ssize_t size;
+    fp = fopen("/sys/class/gpio/export", "w");
+    if (fp == NULL)
+    {
+        eprintf("Error opening");
+        perror("gpioexport: ");
+        goto exitfunc;
+    }
+    size = fprintf(fp, "%s", MES_CLK_IPCORE_RST);
+    if (size <= 0)
+    {
+        eprintf("Error writing to ");
+        perror("gpioexport: ");
+        goto closefile;
+    }
+    fclose(fp);
+    usleep(10000);
+    fp = fopen("/sys/class/gpio/gpio" MES_CLK_IPCORE_RST "/direction", "w");
+    if (fp == NULL)
+    {
+        eprintf("Error opening ");
+        perror("gpiodirection: ");
+        goto exitfunc;
+    }
+    size = fprintf(fp, "out");
+    if (size <= 0)
+    {
+        eprintf("Error writing to ");
+        perror("gpiodirection: ");
+        goto closefile;
+    }
+    fclose(fp);
+    usleep(10000);
+    fp = fopen("/sys/class/gpio/gpio" MES_CLK_IPCORE_RST "/value", "w");
+    if (fp == NULL)
+    {
+        eprintf("Error opening ");
+        perror("gpiovalue: ");
+        goto exitfunc;
+    }
+    size = fprintf(fp, "1");
+    if (size <= 0)
+    {
+        eprintf("Error writing to ");
+        perror("gpiovalue: ");
+        goto closefile;
+    }
+    fclose(fp);
+    usleep(MES_CLK_IPCORE_RST_TOUT);
+    fp = fopen("/sys/class/gpio/gpio" MES_CLK_IPCORE_RST "/value", "w");
+    if (fp == NULL)
+    {
+        eprintf("Error opening ");
+        perror("gpiovalue: ");
+        goto exitfunc;
+    }
+    size = fprintf(fp, "0");
+    if (size <= 0)
+    {
+        eprintf("Error writing to ");
+        perror("gpiovalue: ");
+        goto closefile;
+    }
+    fclose(fp);
+    return EXIT_SUCCESS;
+closefile:
+    fclose(fp);
+exitfunc:
+    return EXIT_FAILURE;
+}
+
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
 #endif
@@ -51,10 +133,6 @@ static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
-
-#define eprintf(str, ...) \
-    fprintf(stderr, "%s, %d: " str "\n", __func__, __LINE__, ##__VA_ARGS__); \
-    fflush(stderr)
 
 int main(int, char**)
 {
@@ -157,6 +235,10 @@ int main(int, char**)
                 uio_write(dev, MES_CLK_RST, 0x0);
                 usleep(100);
                 uio_write(dev, MES_CLK_RST, 0x1);
+            }
+            if (ImGui::Button("IPCore Reset"))
+            {
+                mesclk_ipcore_rst();
             }
             if (ImGui::InputInt("Reference Cycles", &refcycles, 0, 0, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
             {
