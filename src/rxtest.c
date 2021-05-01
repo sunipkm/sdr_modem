@@ -50,7 +50,8 @@ int main(int argc, char *argv[])
         }
         rxmodem_enable_ext_fr(dev, loop_bw, damp, gain);
     }
-    rxmodem_reset(dev, dev->conf);
+    else
+        rxmodem_reset(dev, dev->conf);
     while (!done)
     {
         printf("\n\nWaiting to receive...\n");
@@ -83,10 +84,7 @@ int main(int argc, char *argv[])
         printf("\n");
         free(buf);
     }
-    if (argc == 4)
-    {
-        rxmodem_disable_ext_fr(dev);
-    }
+    rxmodem_disable_ext_fr(dev);
     rxmodem_destroy(dev);
     return 0;
 }
