@@ -51,6 +51,9 @@ LIBTARGET=imgui/libimgui_glfw.a
 
 CPPOBJS=src/guimain.o
 
+MESCLKOBJS=src/measureclk.o \
+	src/libuio.o
+
 COBJS=src/adidma.o \
 	src/libiio.o \
 	src/libuio.o \
@@ -81,6 +84,9 @@ $(LIBTARGET): imgui
 fixdt:
 	$(CC) -o $@.out -O2 -I include/ src/test_fixdt.c -lm
 
+mesclk: $(MESCLKOBJS) $(LIBTARGET)
+	$(CXX) -o $@.out $(CXXFLAGS) $(MESCLKOBJS) $(LIBTARGET) $(LIBS)
+
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
 %.o: %.c
@@ -93,6 +99,7 @@ cleanobjs:
 	$(RM) $(RXOBJS)
 	$(RM) $(TXOBJS)
 	$(RM) $(CPPOBJS)
+	$(RM) $(MESCLKOBJS)
 
 clean: cleanobjs
 	$(RM) *.out

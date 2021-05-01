@@ -11,6 +11,10 @@
 #ifndef __LIB_UIO_H
 #define __LIB_UIO_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <sys/types.h>
 #include <stdint.h>
 
@@ -109,4 +113,9 @@ int uio_mask_irq(uio_dev *dev);
  * error.
  */
 int uio_wait_irq(uio_dev *dev, int32_t tout_ms);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif // __LIB_UIO_H
