@@ -38,10 +38,10 @@ typedef enum
     RXMODEM_PD_THRESHOLD = 0x108,  /// Default: 10
     RXMODEM_RX_ENABLE = 0x10c,     /// Enable Decode: 1 to start radio, 0 to stop radio
     RXMODEM_PAYLOAD_LEN = 0x134,   /// Read register for payload length
-    RXMODEM_EXT_FR_EN = 0x200,     /// Enable external FR loop coefficients
-    RXMODEM_EXT_FR_K1 = 0x204,     /// External K1 coefficient
-    RXMODEM_EXT_FR_K2 = 0x208,     /// External K2 coefficient
-    RXMODEM_EXT_FR_GAIN = 0x20c,   /// External FR loop gain
+    // RXMODEM_EXT_FR_EN = 0x200,     /// Enable external FR loop coefficients
+    // RXMODEM_EXT_FR_K1 = 0x204,     /// External K1 coefficient
+    // RXMODEM_EXT_FR_K2 = 0x208,     /// External K2 coefficient
+    // RXMODEM_EXT_FR_GAIN = 0x20c,   /// External FR loop gain
 
     // RXMODEM_RESET = 0x0,          /// Reset the entire IP
     // RXMODEM_RX_ENABLE = 0x118,    /// Enable RX. Default: 0, Receive: 1

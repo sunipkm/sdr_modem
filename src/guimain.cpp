@@ -123,7 +123,10 @@ void ChatWin(bool *active)
     time_t rawtime;
     static struct tm *timeinfo;
     static int mtu = 0;
-    static int fr_loop_idx = 40;
+    static int fr_loop_idx = 0;
+    static int eqmu = 0;
+    uio_read(rxdev->bus, RXMODEM_FR_LOOP_BW, (uint32_t) &fr_loop_idx);
+    uio_read(rxdev->bus, RXMODEM_EQ_MU, (uint32_t) &eqmu);
     if (firstRun)
     {
         snprintf(tmptxbuf, 4000, "Testing...");
@@ -135,11 +138,23 @@ void ChatWin(bool *active)
     ImGui::TextWrapped("Received: %s", rx_buf);
     pthread_mutex_unlock(rx_buf_access);
     ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.4);
-    if (ImGui::InputInt("FR Loop BW", &fr_loop_idx, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
+    ImGui::InputInt("FR Loop BW", &fr_loop_idx, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+    ImGui::SameLine();
+    if (ImGui::Button("Update Loop BW"))
     {
-        if (fr_loop_idx < 0 || fr_loop_idx > 127)
+        if ((fr_loop_idx < 0) || (fr_loop_idx > 127))
             fr_loop_idx = 40;
         rxdev->conf->fr_loop_bw = fr_loop_idx;
+        rxmodem_reset(rxdev, rxdev->conf);
+        rxmodem_start(rxdev);
+    }
+    ImGui::SameLine();
+    ImGui::InputInt("EQ Mu", &eqmu, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+    if (ImGui::Button("Update EQ Mu"))
+    {
+        if ((eqmu < 10) || (eqmu > 1000))
+            eqmu = 100;
+        rxdev->conf->eqmu = eqmu;
         rxmodem_reset(rxdev, rxdev->conf);
         rxmodem_start(rxdev);
     }

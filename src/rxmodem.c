@@ -229,7 +229,7 @@ static void *rx_irq_thread(void *__dev)
 #ifdef RXDEBUG
         eprintf("Payload length: %u", frame_sz);
 #endif
-        if (frame_sz == 0 || frame_sz == 0x1ffc)
+        if ((frame_sz == 0) || (frame_sz == 0x1ffc) || (frame_sz > TXRX_MTU_MAX))
         {
             pthread_cond_signal(&rx_rcv);
             eprintf("Received invalid frame size %u", frame_sz);
@@ -367,7 +367,7 @@ ssize_t rxmodem_receive(rxmodem *dev)
         retcode = RX_NUM_FRAMES_ZERO;
         goto rxmodem_receive_end;
     }
-    else if (frame_hdr->frame_sz == 0 || frame_hdr->frame_sz > TXRX_MTU_MAX)
+    else if ((frame_hdr->frame_sz == 0) || (frame_hdr->frame_sz > TXRX_MTU_MAX))
     {
         eprintf("Invalid start frame size!");
         dev->rx_done = 1;
@@ -499,22 +499,22 @@ int rxmodem_reset(rxmodem *dev, rxmodem_conf_t *conf)
 #ifdef RXDEBUG
     eprintf();
 #endif
-    uio_write(dev->bus, RXMODEM_EXT_FR_K1, conf->ext_fr_k1);
-#ifdef RXDEBUG
-    eprintf();
-#endif
-    uio_write(dev->bus, RXMODEM_EXT_FR_K2, conf->ext_fr_k2);
-#ifdef RXDEBUG
-    eprintf();
-#endif
-    uio_write(dev->bus, RXMODEM_EXT_FR_GAIN, conf->ext_fr_gain);
-#ifdef RXDEBUG
-    eprintf();
-#endif
-    uio_write(dev->bus, RXMODEM_EXT_FR_EN, conf->ext_fr_en);
-#ifdef RXDEBUG
-    eprintf();
-#endif
+//     uio_write(dev->bus, RXMODEM_EXT_FR_K1, conf->ext_fr_k1);
+// #ifdef RXDEBUG
+//     eprintf();
+// #endif
+//     uio_write(dev->bus, RXMODEM_EXT_FR_K2, conf->ext_fr_k2);
+// #ifdef RXDEBUG
+//     eprintf();
+// #endif
+//     uio_write(dev->bus, RXMODEM_EXT_FR_GAIN, conf->ext_fr_gain);
+// #ifdef RXDEBUG
+//     eprintf();
+// #endif
+//     uio_write(dev->bus, RXMODEM_EXT_FR_EN, conf->ext_fr_en);
+// #ifdef RXDEBUG
+//     eprintf();
+// #endif
     return 1;
 }
 
