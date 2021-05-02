@@ -24,7 +24,6 @@ enum MES_CLK_REGS
     MES_CLK_GUID = 0x8,
     
     MES_CLK_RST = 0x100,
-    MES_CLK_EN = 0x200,
 
     MES_CLK_REFCYC = 0x104,
 
@@ -184,7 +183,6 @@ int main(int, char**)
     //IM_ASSERT(font != NULL);
 
     // Our state
-    static bool enable = false;
     uio_write(dev, MES_CLK_RST, 1);
     uint32_t tstamp = 0x0;
     uio_read(dev, MES_CLK_GUID, &tstamp);
@@ -226,11 +224,6 @@ int main(int, char**)
         {
             ImGui::Begin(winName);                          // Create a window called "Hello, world!" and append into it.
             ImGui::Text("Controls");
-            if (ImGui::Checkbox("Enable", &enable))
-            {
-                uio_write(dev, MES_CLK_EN, (uint32_t) enable);
-            }
-            ImGui::SameLine();
             if (ImGui::Button("Reset"))
             {
                 uio_write(dev, MES_CLK_RST, 0x0);
@@ -290,7 +283,6 @@ int main(int, char**)
 
     glfwDestroyWindow(window);
     glfwTerminate();
-    uio_write(dev, MES_CLK_EN, 0);
     uio_destroy(dev);
     return 0;
 }
