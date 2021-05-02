@@ -31,7 +31,7 @@
 /**
  * @brief DEFAULT_FRAME_SZ sets the default MTU of the radio. Should be a multiple of MODEM_BYTE_ALIGN.
  */
-#define DEFAULT_FRAME_SZ 1392 // 4072
+#define DEFAULT_FRAME_SZ 128 // 1392 // 4072
 
 /**
  * @brief TXRX_MTU_MIN sets the minimum MTU of the radio. Requires at least 8 bytes of data, with padding and frame header.

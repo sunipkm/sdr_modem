@@ -214,6 +214,7 @@ int main(int, char**)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        uio_read(dev, MES_CLK_REFCYC, (uint32_t *)&refcycles);
         uio_read(dev, MES_CLK_MESCYC, (uint32_t *)&mescycles);
         uio_read(dev, MES_CLK_DBG_REFCYC, (uint32_t *)&dbg_refcycles);
         uio_read(dev, MES_CLK_DBG_REFCLK, (uint32_t *)&dbg_refclk);
@@ -235,6 +236,11 @@ int main(int, char**)
                 uio_write(dev, MES_CLK_RST, 0x0);
                 usleep(100);
                 uio_write(dev, MES_CLK_RST, 0x1);
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("UIO Reset"))
+            {
+                uio_write(dev, MES_CLK_RESET, 0x1);
             }
             if (ImGui::Button("IPCore Reset"))
             {
