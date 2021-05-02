@@ -37,8 +37,6 @@ typedef enum
     RXMODEM_EQ_MU = 0x104,         /// Default: 200
     RXMODEM_PD_THRESHOLD = 0x108,  /// Default: 10
     RXMODEM_RX_ENABLE = 0x10c,     /// Enable Decode: 1 to start radio, 0 to stop radio
-    RXMODEM_BYPASS_CODING = 0x110, /// Enable coding bypass: 0
-    RXMODEM_BYPASS_EQ = 0x114,     /// Enable bypass eq: 0
     RXMODEM_PAYLOAD_LEN = 0x134,   /// Read register for payload length
     RXMODEM_EXT_FR_EN = 0x200,     /// Enable external FR loop coefficients
     RXMODEM_EXT_FR_K1 = 0x204,     /// External K1 coefficient

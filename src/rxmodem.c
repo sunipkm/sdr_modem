@@ -495,16 +495,6 @@ int rxmodem_reset(rxmodem *dev, rxmodem_conf_t *conf)
     eprintf();
 #endif
     // usleep(10000);
-    uio_write(dev->bus, RXMODEM_BYPASS_EQ, conf->eq_bypass);
-#ifdef RXDEBUG
-    eprintf();
-#endif
-    // usleep(10000);
-    uio_write(dev->bus, RXMODEM_BYPASS_CODING, 0);
-#ifdef RXDEBUG
-    eprintf();
-#endif
-    // usleep(10000);
     uio_write(dev->bus, RXMODEM_PD_THRESHOLD, conf->pd_threshold);
 #ifdef RXDEBUG
     eprintf();
