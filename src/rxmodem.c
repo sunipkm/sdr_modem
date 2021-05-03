@@ -327,15 +327,18 @@ ssize_t rxmodem_receive(rxmodem *dev)
 #ifdef RXDEBUG
     eprintf("Waiting...");
 #endif
-    int ret = pthread_cond_timedwait(&rx_rcv, &rx_rcv_m, &waitts);
-    if (ret > 0)
-        return -ret;
-        // pthread_cond_wait(&rx_rcv, &rx_rcv_m);
+    int retcode = pthread_cond_timedwait(&rx_rcv, &rx_rcv_m, &waitts);
+    if (retcode)
+    {
+        retcode = -retcode;
+        goto rxmodem_receive_end;
+    }
+    // pthread_cond_wait(&rx_rcv, &rx_rcv_m);
 #ifdef RXDEBUG
     eprintf("Wait over!");
 #endif
     // check for retcode
-    int retcode = dev->retcode;
+    retcode = dev->retcode;
     if (retcode <= 0)
     {
         eprintf("Received error %d", retcode);
