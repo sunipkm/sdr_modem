@@ -125,8 +125,8 @@ void ChatWin(bool *active)
     static int mtu = 0;
     static int fr_loop_idx = 0;
     static int eqmu = 0;
-    uio_read(rxdev->bus, RXMODEM_FR_LOOP_BW, (uint32_t) &fr_loop_idx);
-    uio_read(rxdev->bus, RXMODEM_EQ_MU, (uint32_t) &eqmu);
+    // uio_read(rxdev->bus, RXMODEM_FR_LOOP_BW, (uint32_t) &fr_loop_idx);
+    // uio_read(rxdev->bus, RXMODEM_EQ_MU, (uint32_t) &eqmu);
     if (firstRun)
     {
         snprintf(tmptxbuf, 4000, "Testing...");
