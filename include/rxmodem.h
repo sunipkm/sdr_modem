@@ -21,7 +21,6 @@ extern "C" {
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <math.h>
 #include "txrx_packdef.h"
 
 #define NUM_IRQ_RETRIES 1

@@ -63,11 +63,17 @@ COBJS=src/adidma.o \
 TXOBJS=src/txtest.o
 RXOBJS=src/rxtest.o
 
+PHTX=src/txphoto.o
+PHRX=src/txphoto.o
+
 GUITARGET=phy.out
 TXTARGET=tx.out
 RXTARGET=rx.out
 
-all: $(LIBTARGET) $(GUITARGET) $(TXTARGET) $(RXTARGET)
+TXPHOTO=txphoto.out
+RXPHOTO=rxphoto.out
+
+all: $(LIBTARGET) $(GUITARGET) $(TXTARGET) $(RXTARGET) $(TXPHOTO) $(RXPHOTO)
 
 $(GUITARGET): $(LIBTARGET) $(COBJS) $(CPPOBJS)
 	$(CXX) -o $@ $(COBJS) $(CPPOBJS) $(LIBTARGET) $(LIBS)
@@ -80,6 +86,12 @@ $(RXTARGET): $(COBJS) $(RXOBJS)
 
 $(LIBTARGET): imgui
 	cd imgui && make && cd ..
+
+$(TXPHOTO): $(COBJS) $(PHTX)
+	$(CC) -o $@ $(COBJS) $(PHTX) $(EDLDFLAGS) 
+
+$(RXPHOTO): $(COBJS) $(PHRX)
+	$(CC) -o $@ $(COBJS) $(PHRX) $(EDLDFLAGS) 
 
 fixdt:
 	$(CC) -o $@.out -O2 -I include/ src/test_fixdt.c -lm
@@ -100,10 +112,11 @@ cleanobjs:
 	$(RM) $(TXOBJS)
 	$(RM) $(CPPOBJS)
 	$(RM) $(MESCLKOBJS)
+	$(RM) $(PHTX)
+	$(RM) $(PHRX)
 
 clean: cleanobjs
 	$(RM) *.out
 
 spotless: clean
 	cd imgui && make spotless && cd ..
-

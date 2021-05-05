@@ -177,6 +177,7 @@ int rxmodem_init(rxmodem *dev, int rxmodem_id, int rxdma_id)
         perror("malloc");
         return -1;
     }
+    dev->max_pack_sz = dev->dma->mem_sz;
     return 1;
 }
 
@@ -356,9 +357,9 @@ ssize_t rxmodem_receive(rxmodem *dev)
         retcode = RX_INVALID_GUID;
         goto rxmodem_receive_end;
     }
-    else if (frame_hdr->pack_sz == 0)
+    else if ((frame_hdr->pack_sz == 0) || (frame_hdr->pack_sz > dev->dma->mem_sz))
     {
-        eprintf("Packet size 0");
+        eprintf("Packet size %u", frame_hdr->pack_sz);
         dev->rx_done = 1;
         retcode = RX_PACK_SZ_ZERO;
         goto rxmodem_receive_end;
@@ -377,7 +378,7 @@ ssize_t rxmodem_receive(rxmodem *dev)
         retcode = RX_FRAME_SZ_ZERO;
         goto rxmodem_receive_end;
     }
-    else if (frame_hdr->mtu == 0)
+    else if ((frame_hdr->mtu < TXRX_MTU_MIN) || (frame_hdr->mtu > TXRX_MTU_MAX))
     {
         eprintf("Invalid MTU!\n");
         dev->rx_done = 1;
