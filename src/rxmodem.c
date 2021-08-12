@@ -380,7 +380,7 @@ ssize_t rxmodem_receive(rxmodem *dev)
     }
     else if ((frame_hdr->mtu < TXRX_MTU_MIN) || (frame_hdr->mtu > TXRX_MTU_MAX))
     {
-        eprintf("Invalid MTU!\n");
+        eprintf("Invalid MTU %x!\n", frame_hdr->mtu);
         dev->rx_done = 1;
         retcode = RX_FRAME_INVALID;
         goto rxmodem_receive_end;
@@ -445,7 +445,7 @@ ssize_t rxmodem_read(rxmodem *dev, uint8_t *buf, ssize_t size)
         ssize_t ofst = (dev->frame_ofst)[i];
         pthread_mutex_unlock(&frame_ofst_m);
 #ifdef RXDEBUG
-        eprintf("%s: Offset %d = %ld", i, ofst);
+        eprintf("%s: Offset %d = %ld", __func__, i, ofst);
 #endif
         // read in frame header
         memcpy(frame_hdr, dev->dma->mem_virt_addr + ofst, sizeof(modem_frame_header_t));
