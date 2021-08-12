@@ -375,7 +375,7 @@ int main(int, char **)
         return 1;
     // set hostname
     char progname[256];
-    if (!gethostname(hostname, 256))
+    if (gethostname(hostname, 256))
         snprintf(progname, 256, "AD9361 Configuration Utility");
     else
         snprintf(progname, 256, "AD9361 Configuration Utility @ %s", hostname);
