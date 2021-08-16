@@ -19,7 +19,7 @@ EDCFLAGS+= -I include/ -I drivers/ -I ./ -Wall -O3 -std=gnu11 -DADIDMA_NOIRQ -D_
 CXXFLAGS:= -I include/ -I imgui/include/ -I ./ -Wall -O3 -fpermissive -std=gnu++11 -I libs/gl3w -DIMGUI_IMPL_OPENGL_LOADER_GL3W
 # EDCFLAGS+= -DRXDEBUG -DTXDEBUG -DADIDMA_DEBUG -DIIO_DEBUG
 CXXFLAGS+= -DENABLE_MODEM -DLIBIIO_FTR_FILE
-EDLDFLAGS += -lpthread -lm -liio -lusb-1.0
+EDLDFLAGS += -lpthread -lm -liio
 LIBS = 
 
 ifeq ($(UNAME_S), Linux) #LINUX
@@ -45,7 +45,7 @@ ifeq ($(UNAME_S), Darwin) #APPLE
 	CFLAGS = $(CXXFLAGS)
 endif
 
-LIBS += -lpthread -lm -liio -lusb-1.0
+LIBS += -lpthread -lm -liio
 
 LIBTARGET=imgui/libimgui_glfw.a
 
@@ -74,6 +74,9 @@ TXPHOTO=txphoto.out
 RXPHOTO=rxphoto.out
 
 all: $(LIBTARGET) $(GUITARGET) $(TXTARGET) $(RXTARGET) $(TXPHOTO) $(RXPHOTO)
+
+modemlib: $(COBJS)
+	ar -crus libmodem.a $(COBJS)
 
 $(GUITARGET): $(LIBTARGET) $(COBJS) $(CPPOBJS)
 	$(CXX) -o $@ $(COBJS) $(CPPOBJS) $(LIBTARGET) $(LIBS)
@@ -117,6 +120,7 @@ cleanobjs:
 
 clean: cleanobjs
 	$(RM) *.out
+	$(RM) *.a
 
 spotless: clean
 	cd imgui && make spotless && cd ..
